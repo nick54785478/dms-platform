@@ -2,7 +2,7 @@
 
 一個基於微服務架構建立的現代化、分散式文件管理系統。提供強大的文件生命週期管理、透過分片上傳 (Multipart Upload) 處理超大檔案，並採用事件驅動架構 (Event-Driven Architecture) 來確保資料一致性與系統解耦。
 
-## 🌟 核心特色
+## 核心特色
 
 - **文件管理**：建立、更新與管理文件的中繼資料。
 - **版本控制**：內建歷史版本支援 (主版本 / 次版本控制)。
@@ -11,7 +11,7 @@
 - **事件驅動的檔案綁定**：使用 Outbox Pattern 與 Kafka 非同步地將上傳的檔案綁定至業務實體，並安全地處理軟刪除機制。
 - **現代化 UI**：採用 Angular 與 PrimeNG 打造優雅、響應式的前端介面。
 
-## 📐 系統架構
+## 系統架構
 
 本系統基於現代後端架構原則所建構，以確保高可維護性、可擴展性與鬆耦合。
 
@@ -30,7 +30,7 @@
 - **Transactional Outbox Pattern**：為了防止本地資料庫與 Kafka 訊息發佈之間的資料不一致，領域事件會與業務資料在同一個 Transaction 內寫入 `outbox_messages` 資料表。隨後由背景排程器可靠地將這些訊息轉發至 Kafka，確保**至少一次 (At-Least-Once)** 的傳遞保證。
 - **事件消費者 (Event Consumers)**：`file-service` 作為事件消費者，訂閱如 `FileBoundEvent` 與 `AttachmentDeletedEvent` 等事件，在背景安全地執行實體檔案的綁定與刪除操作。
 
-## 🏗️ 專案結構與技術堆疊
+## 專案結構與技術堆疊
 
 此儲存庫為一個 Mono-repository，包含以下核心模組：
 
@@ -58,7 +58,7 @@
 - **Kafka-UI**：用於監控 Kafka Topics 的網頁介面。
 - **MinIO**：S3 相容的物件儲存服務。
 
-## 🚀 快速開始
+## 快速開始
 
 ### 必備工具
 - [Docker & Docker Compose](https://www.docker.com/)
@@ -103,14 +103,14 @@ npm run start
 
 在瀏覽器中前往 `http://localhost:4200` 即可使用 DMS Platform！
 
-## 🧪 測試分片上傳 (Multipart Upload)
+## 測試分片上傳 (Multipart Upload)
 如果您想在沒有 UI 的情況下測試分片上傳機制，可以執行位於根目錄的 Node.js 測試腳本：
 ```bash
 node test-multipart.js
 ```
 此腳本會產生一個 12MB 的假檔案，並針對 File Service 模擬完整的三階段切片上傳流程。
 
-## 📖 架構開發規範
+## 架構開發規範
 此專案嚴格遵守我們自定義的架構規範 (AGENTS.md)：
 - **純粹領域 (Pure Domain)**：`domain/` 層對於 Spring 或任何技術框架具有零依賴。
 - **垂直切片 (Vertical Slicing)**：依據 Aggregate 而非技術分層來組織架構。
