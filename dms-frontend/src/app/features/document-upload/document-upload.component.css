@@ -1,0 +1,35 @@
+/* Success Toast High Contrast Styling */
+:host ::ng-deep .p-toast .p-toast-message-success {
+    background: #10b981; /* 翡翠綠 */
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+:host ::ng-deep .p-toast .p-toast-message-success .p-toast-icon,
+:host ::ng-deep .p-toast .p-toast-message-success .p-toast-summary,
+:host ::ng-deep .p-toast .p-toast-message-success .p-toast-detail,
+:host ::ng-deep .p-toast .p-toast-message-success .p-toast-icon-close {
+    color: #ffffff !important;
+}
+:host ::ng-deep .p-toast .p-toast-message-success .p-toast-icon-close:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Error Toast High Contrast Styling */
+:host ::ng-deep .p-toast .p-toast-message-error {
+    background: #ef4444; /* 鮮紅色 */
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+:host ::ng-deep .p-toast .p-toast-message-error .p-toast-icon,
+:host ::ng-deep .p-toast .p-toast-message-error .p-toast-summary,
+:host ::ng-deep .p-toast .p-toast-message-error .p-toast-detail,
+:host ::ng-deep .p-toast .p-toast-message-error .p-toast-icon-close {
+    color: #ffffff !important;
+}
+:host ::ng-deep .p-toast .p-toast-message-error .p-toast-icon-close:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}

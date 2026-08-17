@@ -1,0 +1,119 @@
+version: '3.8'
+
+# ===================================================================
+# File Service 分散式基礎設施 (Postgres + Redis + KRaft Kafka + Kafka UI + MinIO)
+# 架構對齊：拔除 CDC，全面依賴應用層 Outbox Pattern 發送事件
+# ===================================================================
+services:
+
+  # 1. File Service 關聯式資料庫
+  file-postgres:
+    image: postgres:15-alpine
+    container_name: file-postgres
+    restart: "no" # 🛑 強制阻斷 Docker Desktop 開機自動啟動
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: file_db
+      TZ: Asia/Taipei
+    volumes:
+      - file-postgres-data:/var/lib/postgresql/data
+    networks:
+      - file-network
+
+  # 2. Redis (網關限流與分散式快取)
+  file-redis:
+    image: redis:7-alpine
+    container_name: file-redis
+    restart: "no" # 🛑 同步阻斷開機自啟
+    ports:
+      - "6379:6379"
+    # 設定 Redis 密碼，對齊企業級安全規範
+    command: redis-server --requirepass file_redis_pass
+    volumes:
+      - file-redis-data:/data
+    networks:
+      - file-network
+
+  # 📨 3. Kafka (KRaft 模式，內外雙網完美監聽)
+  file-kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: file-kafka
+    restart: "no" # 🛑 強制阻斷 Docker Desktop 開機自動啟動
+    ports:
+      - "9092:9092" # 暴漏給主機端 Spring Boot 連線
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # 核心優化：內外雙網監聽！
+      # INTERNAL (29092): 供 Docker 內部的 Kafka-UI 溝通
+      # EXTERNAL (9092): 供你本機的 Spring Boot (8080/8081) 透過 localhost 連線
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://file-kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@file-kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk # KRaft 初始化必須的叢集 ID
+      TZ: Asia/Taipei
+    volumes:
+      - file-kafka-data:/var/lib/kafka/data
+    networks:
+      - file-network
+
+  # 4. Kafka UI (高顏值監控面板)
+  file-kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: file-kafka-ui
+    restart: "no" # 🛑 強制阻斷 Docker Desktop 開機自動啟動
+    depends_on:
+      - file-kafka
+    ports:
+      - "8090:8080" # 避開你本機的 8080/8081 Port，改用 8090
+    environment:
+      KAFKA_CLUSTERS_0_NAME: file-cluster
+      # 透過 Docker 內部網路 (INTERNAL) 連接 Kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: file-kafka:29092
+    networks:
+      - file-network
+
+  # 5. MinIO (物件儲存伺服器，S3 相容)
+  file-minio:
+    image: minio/minio:latest
+    container_name: file-minio
+    restart: "no"
+    ports:
+      - "9000:9000" # MinIO API
+      - "9001:9001" # Web UI Console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      TZ: Asia/Taipei
+    command: server /data --console-address ":9001"
+    volumes:
+      - file-minio-data:/data
+    networks:
+      - file-network
+
+# ===================================================================
+# 資料卷與共用網路定義
+# ===================================================================
+volumes:
+  file-postgres-data:
+    name: file-postgres-data
+  file-redis-data:
+    name: file-redis-data
+  file-kafka-data:
+    name: file-kafka-data
+  file-minio-data:
+    name: file-minio-data
+
+networks:
+  file-network:
+    driver: bridge

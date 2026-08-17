@@ -1,0 +1,15 @@
+<div class="layout-wrapper">
+    <div class="layout-topbar enterprise-nav px-4 py-3 flex justify-content-between align-items-center mb-4">
+        <div class="flex align-items-center">
+            <span class="text-2xl font-bold text-primary mr-5" style="letter-spacing: 0.5px;">DMS 系統</span>
+            <nav class="flex gap-4">
+                <a routerLink="/documents" routerLinkActive="font-bold text-primary" [routerLinkActiveOptions]="{exact: true}" class="text-700 hover:text-primary transition-colors transition-duration-200 cursor-pointer no-underline">文件維護</a>
+                <a routerLink="/upload" routerLinkActive="font-bold text-primary" [routerLinkActiveOptions]="{exact: true}" class="text-700 hover:text-primary transition-colors transition-duration-200 cursor-pointer no-underline">新增文件</a>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="layout-main px-4 max-w-screen-xl mx-auto">
+        <router-outlet></router-outlet>
+    </div>
+</div>

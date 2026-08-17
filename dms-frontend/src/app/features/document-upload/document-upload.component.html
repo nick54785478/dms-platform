@@ -1,0 +1,76 @@
+<p-toast></p-toast>
+<div class="flex align-items-center justify-content-center min-h-screen">
+  <div class="glass-card p-6 shadow-4 w-full md:w-8 lg:w-6 xl:w-5 relative">
+    <div class="text-center mb-5">
+      <h2 class="text-3xl font-bold m-0 text-gray-800 mb-2">文件上傳中心</h2>
+      <p class="text-gray-600 m-0">將您的文件上傳至 DMS 系統並輸入相關描述</p>
+    </div>
+
+    <form [formGroup]="uploadForm" (ngSubmit)="submitDocument(fileUploader)" class="flex flex-column gap-4">
+      
+      <!-- Title Input -->
+      <div class="flex flex-column gap-2">
+        <label for="title" class="text-gray-800 font-semibold">文件標題 <span style="color: #ef4444;">*</span></label>
+        <input 
+          pInputText 
+          id="title" 
+          formControlName="title" 
+          placeholder="請輸入文件標題..." 
+          class="w-full"
+        />
+        <small *ngIf="uploadForm.get('title')?.invalid && uploadForm.get('title')?.touched" style="color: #ef4444;">
+          文件標題為必填欄位
+        </small>
+      </div>
+
+      <!-- Description Input -->
+      <div class="flex flex-column gap-2">
+        <label for="description" class="text-gray-800 font-semibold">文件描述</label>
+        <textarea 
+          pInputTextarea 
+          id="description" 
+          formControlName="description" 
+          rows="4" 
+          placeholder="請輸入文件描述..." 
+          class="w-full"
+        ></textarea>
+      </div>
+
+      <!-- File Upload component -->
+      <div class="flex flex-column gap-2 mt-2">
+        <label class="text-gray-800 font-semibold">選擇檔案 <span style="color: #ef4444;">*</span></label>
+        <p-fileUpload 
+          #fileUploader
+          name="demo[]"
+          [customUpload]="true"
+          (onSelect)="onFileSelect($event)"
+          (onRemove)="onFileRemove($event)"
+          (onClear)="onFileRemove($event)"
+          [showUploadButton]="false"
+          [showCancelButton]="false"
+          chooseLabel="選擇"
+          maxFileSize="5000000000"
+          styleClass="w-full">
+          <ng-template pTemplate="content">
+            <div *ngIf="!selectedFile" class="text-center p-4 border-dashed border-round border-gray-400 hover:surface-100 transition-colors duration-200 cursor-pointer">
+              <i class="pi pi-cloud-upload text-4xl text-primary mb-2"></i>
+              <p class="m-0 text-gray-600">將檔案拖曳至此處或點擊選擇按鈕</p>
+            </div>
+          </ng-template>
+        </p-fileUpload>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="mt-4">
+        <p-button 
+          label="上傳並建立文件" 
+          icon="pi pi-check" 
+          type="submit" 
+          [loading]="uploading" 
+          [disabled]="uploadForm.invalid || !selectedFile" 
+          styleClass="p-button-primary w-full p-3 font-bold text-lg">
+        </p-button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,150 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="enterprise-card p-5 mt-4">
+    <div class="flex flex-column md:flex-row justify-content-between align-items-center mb-5 gap-3">
+        <h2 class="m-0 text-3xl font-semibold text-800" style="letter-spacing: 0.5px;">文件維護列表</h2>
+        
+        <!-- 搜尋與過濾區 -->
+        <div class="flex align-items-center gap-3 w-full md:w-auto">
+            <span class="p-input-icon-left w-full md:w-auto">
+                <i class="pi pi-search text-gray-500"></i>
+                <input pInputText type="text" placeholder="標題模糊搜尋 (至少 3 字)..." 
+                       [(ngModel)]="searchTitle" (ngModelChange)="onTitleSearchChange($event)"
+                       class="w-full md:w-20rem p-inputtext-sm border-round-xl" />
+            </span>
+            <p-dropdown [options]="statusOptions" [(ngModel)]="searchStatus" (onChange)="onStatusChange()"
+                        placeholder="過濾狀態" styleClass="w-full md:w-12rem p-inputtext-sm border-round-xl">
+            </p-dropdown>
+        </div>
+    </div>
+
+    <p-table [value]="documents" [lazy]="true" (onLazyLoad)="loadDocuments($event)" 
+        [paginator]="true" [rows]="10" [totalRecords]="totalRecords" [loading]="loading"
+        styleClass="p-datatable-striped p-datatable-sm" [rowsPerPageOptions]="[10, 25, 50]">
+        
+        <ng-template pTemplate="header">
+            <tr>
+                <th>標題</th>
+                <th>描述</th>
+                <th>狀態</th>
+                <th>建立時間</th>
+                <th>版本</th>
+                <th style="width: 22rem; text-align: center;">操作</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-doc>
+            <tr>
+                <td>{{doc.title}}</td>
+                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" [title]="doc.description">
+                    {{doc.description}}
+                </td>
+                <td>
+                    <p-tag [value]="doc.status" [severity]="getSeverity(doc.status)"></p-tag>
+                </td>
+                <td>{{doc.createdAt | date:'yyyy/MM/dd HH:mm'}}</td>
+                <td>
+                    <p-tag [value]="doc.semanticVersion || 'V0.1'" severity="info"></p-tag>
+                </td>
+                <td style="text-align: center; white-space: nowrap;">
+                    <p-button icon="pi pi-ellipsis-v" severity="secondary" [rounded]="true" [text]="true" (onClick)="openActionMenu($event, menu, doc)"></p-button>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="5" style="text-align: center;">目前沒有任何文件資料。</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog header="編輯文件" [(visible)]="editDialogVisible" [modal]="true" [style]="{ width: '400px' }">
+    <div class="flex flex-column gap-3 pt-3">
+        <div class="flex flex-column gap-2">
+            <label for="title" class="font-bold">標題</label>
+            <input pInputText id="title" [(ngModel)]="editingDocument.title" />
+        </div>
+        <div class="flex flex-column gap-2">
+            <label for="description" class="font-bold">描述</label>
+            <textarea pInputTextarea id="description" [(ngModel)]="editingDocument.description" rows="5"></textarea>
+        </div>
+    </div>
+    
+    <ng-template pTemplate="footer">
+        <p-button label="取消" icon="pi pi-times" [text]="true" severity="secondary" (onClick)="editDialogVisible = false"></p-button>
+        <p-button label="儲存" icon="pi pi-check" [text]="true" (onClick)="saveEdit()"></p-button>
+    </ng-template>
+</p-dialog>
+
+<p-dialog header="上傳新版本" [(visible)]="uploadVersionDialogVisible" [modal]="true" [style]="{ width: '400px' }">
+    <div class="flex flex-column gap-3 pt-3">
+        <div class="flex align-items-center gap-2">
+            <p-checkbox [(ngModel)]="isMajorVersion" [binary]="true" inputId="isMajorVersion"></p-checkbox>
+            <label for="isMajorVersion" class="mb-0 font-bold">主要版本更新 (Major Version)</label>
+        </div>
+        <div class="flex flex-column gap-2 mt-3">
+            <label class="text-gray-800 font-semibold">選擇新檔案</label>
+            <p-fileUpload 
+                #versionUploader
+                name="versionFile"
+                [customUpload]="true"
+                (onSelect)="onVersionFileSelect($event)"
+                (onRemove)="onVersionFileRemove($event)"
+                (onClear)="onVersionFileRemove($event)"
+                [showUploadButton]="false"
+                [showCancelButton]="false"
+                chooseLabel="選擇檔案"
+                [maxFileSize]="5000000000"
+                styleClass="w-full">
+                <ng-template pTemplate="content">
+                    <div *ngIf="!versionToUpload" class="text-center p-4 border-dashed border-round border-gray-400 hover:surface-100 transition-colors duration-200 cursor-pointer">
+                        <i class="pi pi-cloud-upload text-4xl text-primary mb-2"></i>
+                        <p class="m-0 text-gray-600">將檔案拖曳至此處或點擊選擇按鈕</p>
+                    </div>
+                </ng-template>
+            </p-fileUpload>
+        </div>
+    </div>
+    
+    <ng-template pTemplate="footer">
+        <p-button label="取消" icon="pi pi-times" [text]="true" severity="secondary" (onClick)="uploadVersionDialogVisible = false" [disabled]="uploadingVersion"></p-button>
+        <p-button label="確認上傳" icon="pi pi-upload" [text]="true" (onClick)="submitUploadVersion(versionUploader)" [loading]="uploadingVersion"></p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- 歷史版本紀錄彈窗 -->
+<p-dialog header="歷史版本紀錄" [(visible)]="historyDialogVisible" [modal]="true" [style]="{width: '70vw'}" [draggable]="false" [resizable]="false">
+    <p-table [value]="selectedDocumentHistory" [tableStyle]="{'min-width': '50rem'}">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>版本號</th>
+                <th>標題</th>
+                <th>描述</th>
+                <th>建立時間</th>
+                <th style="width: 10rem; text-align: center;">操作</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-version>
+            <tr>
+                <td><p-tag [value]="version.semanticVersion" severity="info"></p-tag></td>
+                <td>{{version.title}}</td>
+                <td>{{version.description}}</td>
+                <td>{{version.createdAt | date:'yyyy/MM/dd HH:mm'}}</td>
+                <td style="text-align: center;">
+                    <p-button icon="pi pi-download" severity="success" [rounded]="true" [text]="true" (onClick)="downloadHistoryVersion(version.fileId)"></p-button>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="5" class="text-center p-4 text-gray-500">目前沒有任何歷史版本。</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</p-dialog>
+
+<!-- 列表操作選單 -->
+<p-menu #menu [model]="actionMenuItems" [popup]="true" appendTo="body"></p-menu>

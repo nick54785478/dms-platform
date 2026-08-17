@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: dms-service
+  cloud:
+    discovery:
+      enabled: false
+  autoconfigure:
+    exclude: org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration
+
+  # Database configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dms_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Redis configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+
+  # Kafka configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+server:
+  port: 8080 # Changed to 8080 to match frontend expectations
+
+file-service:
+  url: http://localhost:8081 # Changed to 8081 since file-service is now on 8081
