@@ -4,11 +4,16 @@ import com.dms.template.application.port.out.TemplateRepositoryPort;
 import com.dms.template.domain.template.aggregate.entity.TemplateVersion;
 import com.dms.template.domain.template.aggregate.root.Template;
 import com.dms.template.domain.template.aggregate.vo.TemplateId;
+import com.dms.template.domain.template.aggregate.vo.TemplateStatus;
 import com.dms.template.domain.template.aggregate.vo.TemplateType;
 import com.dms.template.infrastructure.persistence.template.entity.TemplateJpaEntity;
 import com.dms.template.infrastructure.persistence.template.entity.TemplateVersionJpaEntity;
 import com.dms.template.infrastructure.persistence.template.repository.TemplateJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -30,6 +35,7 @@ import com.dms.template.application.query.SearchTemplateQuery;
 class TemplateRepositoryAdapter implements TemplateRepositoryPort {
 
     private final TemplateJpaRepository jpaRepository;
+    private final com.dms.template.infrastructure.persistence.template.repository.TemplateVersionJpaRepository versionJpaRepository;
 
     @Override
     public void save(Template template) {
@@ -67,10 +73,10 @@ class TemplateRepositoryAdapter implements TemplateRepositoryPort {
             
             List<TemplateVersion> domainVersions = new ArrayList<>();
             if (entity.getVersions() != null) {
-                for (com.dms.template.infrastructure.persistence.template.entity.TemplateVersionJpaEntity vEntity : entity.getVersions()) {
-                    com.dms.template.domain.template.aggregate.vo.TemplateStatus status = vEntity.getStatus() != null 
-                        ? com.dms.template.domain.template.aggregate.vo.TemplateStatus.valueOf(vEntity.getStatus()) 
-                        : com.dms.template.domain.template.aggregate.vo.TemplateStatus.DRAFT;
+                for (TemplateVersionJpaEntity vEntity : entity.getVersions()) {
+                    TemplateStatus status = vEntity.getStatus() != null
+                        ? TemplateStatus.valueOf(vEntity.getStatus())
+                        : TemplateStatus.DRAFT;
                     
                     domainVersions.add(TemplateVersion.reconstitute(
                         vEntity.getVersion(), 
@@ -98,15 +104,15 @@ class TemplateRepositoryAdapter implements TemplateRepositoryPort {
             probe.setName(query.name());
         }
 
-        org.springframework.data.domain.ExampleMatcher matcher = org.springframework.data.domain.ExampleMatcher.matching()
+        ExampleMatcher matcher = org.springframework.data.domain.ExampleMatcher.matching()
                 .withIgnoreNullValues()
                 .withStringMatcher(org.springframework.data.domain.ExampleMatcher.StringMatcher.CONTAINING)
                 .withIgnoreCase();
 
-        org.springframework.data.domain.Example<TemplateJpaEntity> example = org.springframework.data.domain.Example.of(probe, matcher);
-        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(query.page(), query.size());
+        Example<TemplateJpaEntity> example = org.springframework.data.domain.Example.of(probe, matcher);
+        PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(query.page(), query.size());
 
-        org.springframework.data.domain.Page<TemplateJpaEntity> pageResult = jpaRepository.findAll(example, pageRequest);
+        Page<TemplateJpaEntity> pageResult = jpaRepository.findAll(example, pageRequest);
         
         List<TemplateSearchedResult> content = pageResult.map(entity -> {
             return new TemplateSearchedResult(
@@ -131,8 +137,21 @@ class TemplateRepositoryAdapter implements TemplateRepositoryPort {
     public Optional<TemplateGottenResult> getTemplate(String id) {
         return jpaRepository.findById(id).map(entity -> {
             String draftJson = null;
+            String latestVersion = null;
             if (entity.getVersions() != null && !entity.getVersions().isEmpty()) {
-                draftJson = entity.getVersions().getFirst().getContentDefinition();
+                java.util.Optional<com.dms.template.infrastructure.persistence.template.entity.TemplateVersionJpaEntity> draftOpt = entity.getVersions().stream()
+                        .filter(v -> "DRAFT".equals(v.getStatus()))
+                        .findFirst();
+                
+                com.dms.template.infrastructure.persistence.template.entity.TemplateVersionJpaEntity latest;
+                latest = draftOpt.orElseGet(() -> entity.getVersions().stream()
+                        .max((v1, v2) -> {
+                            int m1 = extractMajor(v1.getVersion());
+                            int m2 = extractMajor(v2.getVersion());
+                            return Integer.compare(m1, m2);
+                        }).orElse(entity.getVersions().getFirst()));
+                draftJson = latest.getContentDefinition();
+                latestVersion = latest.getVersion();
             }
             return new TemplateGottenResult(
                     entity.getId(),
@@ -140,8 +159,38 @@ class TemplateRepositoryAdapter implements TemplateRepositoryPort {
                     entity.getTemplateCode(),
                     entity.getName(),
                     entity.getDescription(),
-                    draftJson
+                    draftJson,
+                    latestVersion
             );
         });
+    }
+
+    private int extractMajor(String versionStr) {
+        if (versionStr != null && versionStr.startsWith("V") && versionStr.contains(".0")) {
+            try {
+                return Integer.parseInt(versionStr.substring(1, versionStr.indexOf(".0")));
+            } catch (NumberFormatException ignored) {}
+        }
+        return 0;
+    }
+
+    @Override
+    public PagedResult<com.dms.template.application.dto.TemplateVersionGottenResult> getTemplateVersions(String templateId, int page, int size) {
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(page, size);
+        Page<TemplateVersionJpaEntity> pageResult = versionJpaRepository.findByTemplateIdOrderByIdDesc(templateId, pageRequest);
+        
+        List<com.dms.template.application.dto.TemplateVersionGottenResult> content = pageResult.map(entity -> new com.dms.template.application.dto.TemplateVersionGottenResult(
+                entity.getVersion(),
+                entity.getStatus(),
+                entity.getContentDefinition()
+        )).getContent();
+        
+        return new PagedResult<>(
+                content,
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages()
+        );
     }
 }

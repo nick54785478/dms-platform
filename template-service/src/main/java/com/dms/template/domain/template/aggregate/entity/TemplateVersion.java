@@ -12,7 +12,7 @@ import java.util.List;
  */
 @Getter
 public class TemplateVersion {
-    private final String version;
+    private String version;
     private String contentDefinition;
     private TemplateStatus status;
     private List<TemplateVariable> variables;
@@ -42,6 +42,9 @@ public class TemplateVersion {
 
     public void publish() {
         this.status = TemplateStatus.PUBLISHED;
+        if (this.version.endsWith("-DRAFT")) {
+            this.version = this.version.replace("-DRAFT", "");
+        }
     }
 
     public void archive() {

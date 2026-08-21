@@ -8,6 +8,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TemplateService } from '../../core/services/template.service';
 import { ActivatedRoute } from '@angular/router';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-template-editor',
@@ -19,7 +20,8 @@ import { ActivatedRoute } from '@angular/router';
     ButtonModule,
     InputTextModule,
     DialogModule,
-    DropdownModule
+    DropdownModule,
+    DragDropModule
   ],
   templateUrl: './template-editor.component.html',
   styleUrls: ['./template-editor.component.css']
@@ -91,6 +93,11 @@ export class TemplateEditorComponent implements OnInit {
     this.updateJson();
   }
   
+  drop(event: CdkDragDrop<any[]>) {
+    moveItemInArray(this.columns, event.previousIndex, event.currentIndex);
+    this.updateJson();
+  }
+  
   updateJson() {
     this.draftJson = JSON.stringify({ columns: this.columns }, null, 2);
   }
@@ -122,6 +129,10 @@ export class TemplateEditorComponent implements OnInit {
       next: () => {
         this.isSaving = false;
         this.message = '✅ 草稿 JSON 已儲存！';
+        // 儲存後重新向後端拉取最新範本狀態 (確保 latestVersion 被更新，例如從 V2.0-DRAFT 變成 V3.0-DRAFT)
+        this.templateService.getTemplate(this.createdTemplate.id).subscribe(res => {
+          this.createdTemplate = res;
+        });
       },
       error: (err) => {
         this.isSaving = false;
@@ -137,10 +148,16 @@ export class TemplateEditorComponent implements OnInit {
     this.isPublishing = true;
     this.message = '';
     
-    this.templateService.publishTemplate(this.createdTemplate.id, 'V1.0-DRAFT').subscribe({
+    // 如果沒有 latestVersion 就預設為 V1.0-DRAFT (兼容初次)
+    const versionToPublish = this.createdTemplate.latestVersion || 'V1.0-DRAFT';
+    
+    this.templateService.publishTemplate(this.createdTemplate.id, versionToPublish).subscribe({
       next: () => {
         this.isPublishing = false;
         this.message = '🚀 範本已成功發佈 (釘板)！';
+        this.templateService.getTemplate(this.createdTemplate.id).subscribe(res => {
+          this.createdTemplate = res;
+        });
       },
       error: (err) => {
         this.isPublishing = false;

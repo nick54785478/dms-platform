@@ -6,5 +6,6 @@ public record TemplateGottenResult(
     String templateCode,
     String name,
     String description,
-    String draftJson
+    String draftJson,
+    String latestVersion
 ) {}

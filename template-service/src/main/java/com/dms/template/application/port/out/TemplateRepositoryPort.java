@@ -3,6 +3,7 @@ package com.dms.template.application.port.out;
 import com.dms.template.application.dto.PagedResult;
 import com.dms.template.application.dto.TemplateGottenResult;
 import com.dms.template.application.dto.TemplateSearchedResult;
+import com.dms.template.application.dto.TemplateVersionGottenResult;
 import com.dms.template.application.query.SearchTemplateQuery;
 import com.dms.template.domain.template.aggregate.root.Template;
 import com.dms.template.domain.template.aggregate.vo.TemplateId;
@@ -42,6 +43,16 @@ public interface TemplateRepositoryPort {
      * @return 包含查詢結果 DTO 與分頁資訊的純資料載體 (PagedResult)
      */
     PagedResult<TemplateSearchedResult> searchTemplates(SearchTemplateQuery query);
+
+    /**
+     * 查詢指定範本的所有歷史版本紀錄 (Query Side).
+     *
+     * @param templateId 範本的字串識別碼
+     * @param page       頁碼 (從 0 開始)
+     * @param size       每頁筆數
+     * @return 包含歷史版本資料 DTO 的分頁結果載體
+     */
+    PagedResult<TemplateVersionGottenResult> getTemplateVersions(String templateId, int page, int size);
 
     /**
      * 獲取單一範本的詳細資訊供檢視使用 (Query Side).

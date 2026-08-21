@@ -8,6 +8,8 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { Router } from '@angular/router';
 import { TemplateService } from '../../core/services/template.service';
+import { TooltipModule } from 'primeng/tooltip';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-template-summary',
@@ -19,7 +21,9 @@ import { TemplateService } from '../../core/services/template.service';
     ButtonModule,
     InputTextModule,
     DialogModule,
-    DropdownModule
+    DropdownModule,
+    TooltipModule,
+    TagModule
   ],
   templateUrl: './template-summary.component.html',
   styleUrls: ['./template-summary.component.css']
@@ -129,5 +133,48 @@ export class TemplateSummaryComponent implements OnInit {
 
   fillTemplate(id: string) {
     this.router.navigate(['/template-fill', id]);
+  }
+
+  // History Dialog state
+  displayHistoryDialog = false;
+  historyVersions: any[] = [];
+  loadingHistory = false;
+  totalHistoryRecords = 0;
+  currentHistoryTemplateId = '';
+
+  // Content Preview Dialog state
+  displayContentDialog = false;
+  selectedVersionForView: any = null;
+
+  viewHistory(templateId: string) {
+    this.currentHistoryTemplateId = templateId;
+    this.displayHistoryDialog = true;
+    // Trigger lazy load
+    this.loadHistory({ first: 0, rows: 10 });
+  }
+
+  loadHistory(event: any) {
+    if (!this.currentHistoryTemplateId) return;
+    
+    this.loadingHistory = true;
+    const page = event.first / event.rows;
+    const size = event.rows;
+
+    this.templateService.getTemplateVersions(this.currentHistoryTemplateId, page, size).subscribe({
+      next: (res) => {
+        this.historyVersions = res.content;
+        this.totalHistoryRecords = res.totalElements;
+        this.loadingHistory = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.loadingHistory = false;
+      }
+    });
+  }
+
+  viewVersionContent(version: any) {
+    this.selectedVersionForView = version;
+    this.displayContentDialog = true;
   }
 }

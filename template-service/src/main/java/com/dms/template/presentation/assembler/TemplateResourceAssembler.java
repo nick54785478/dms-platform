@@ -2,8 +2,13 @@ package com.dms.template.presentation.assembler;
 
 import com.dms.template.application.command.CreateTemplateCommand;
 import com.dms.template.application.dto.TemplateGottenResult;
+import com.dms.template.application.dto.TemplateSearchedResult;
+import com.dms.template.application.dto.TemplateVersionGottenResult;
 import com.dms.template.presentation.resource.in.CreateTemplateResource;
 import com.dms.template.presentation.resource.out.TemplateCreatedResource;
+import com.dms.template.presentation.resource.out.TemplateRetrievedResource;
+import com.dms.template.presentation.resource.out.TemplateSearchedResource;
+import com.dms.template.presentation.resource.out.TemplateVersionRetrievedResource;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,7 +47,7 @@ public class TemplateResourceAssembler {
         );
     }
 
-    public com.dms.template.presentation.resource.out.TemplateSearchedResource toSearchedResource(com.dms.template.application.dto.TemplateSearchedResult result) {
+    public TemplateSearchedResource toSearchedResource(TemplateSearchedResult result) {
         if (result == null) return null;
         return new com.dms.template.presentation.resource.out.TemplateSearchedResource(
                 result.id(),
@@ -53,7 +58,7 @@ public class TemplateResourceAssembler {
         );
     }
 
-    public com.dms.template.presentation.resource.out.TemplateRetrievedResource toRetrievedResource(TemplateGottenResult result) {
+    public TemplateRetrievedResource toRetrievedResource(TemplateGottenResult result) {
         if (result == null) return null;
         return new com.dms.template.presentation.resource.out.TemplateRetrievedResource(
                 result.id(),
@@ -61,7 +66,16 @@ public class TemplateResourceAssembler {
                 result.templateCode(),
                 result.name(),
                 result.description(),
-                result.draftJson()
+                result.draftJson(),
+                result.latestVersion()
+        );
+    }
+
+    public TemplateVersionRetrievedResource toVersionRetrievedResource(TemplateVersionGottenResult result) {
+        return new com.dms.template.presentation.resource.out.TemplateVersionRetrievedResource(
+                result.version(),
+                result.status(),
+                result.contentDefinition()
         );
     }
 }

@@ -41,17 +41,22 @@
   <!-- Design Section -->
   <div class="card mb-4">
     <h3>設計欄位 (Design Columns)</h3>
-    <div class="p-fluid formgrid grid mb-3" *ngFor="let col of columns; let i = index">
-      <div class="field col-5">
-        <label>欄位名稱 (Header)</label>
-        <input pInputText [(ngModel)]="col.header" (ngModelChange)="updateJson()" placeholder="例如: 姓名" />
-      </div>
-      <div class="field col-5">
-        <label>綁定屬性 (Field)</label>
-        <input pInputText [(ngModel)]="col.field" (ngModelChange)="updateJson()" placeholder="例如: name" />
-      </div>
-      <div class="field col-2 flex align-items-end">
-        <p-button icon="pi pi-trash" severity="danger" (onClick)="removeColumn(i)"></p-button>
+    <div cdkDropList (cdkDropListDropped)="drop($event)">
+      <div class="p-fluid formgrid grid mb-3 p-3 border-round surface-0 shadow-1 align-items-center" *ngFor="let col of columns; let i = index" cdkDrag>
+        <div class="col-1 flex justify-content-center cursor-move" cdkDragHandle>
+          <i class="pi pi-bars text-500" style="font-size: 1.5rem"></i>
+        </div>
+        <div class="field col-4 mb-0">
+          <label>欄位名稱 (Header)</label>
+          <input pInputText [(ngModel)]="col.header" (ngModelChange)="updateJson()" placeholder="例如: 姓名" />
+        </div>
+        <div class="field col-5 mb-0">
+          <label>綁定屬性 (Field)</label>
+          <input pInputText [(ngModel)]="col.field" (ngModelChange)="updateJson()" placeholder="例如: name" />
+        </div>
+        <div class="field col-2 mb-0 flex align-items-end justify-content-end">
+          <p-button icon="pi pi-trash" severity="danger" (onClick)="removeColumn(i)"></p-button>
+        </div>
       </div>
     </div>
     <p-button label="新增欄位 (Add Column)" icon="pi pi-plus" (onClick)="addColumn()"></p-button>

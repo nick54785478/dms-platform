@@ -5,6 +5,7 @@ import com.dms.template.application.dto.TemplateGottenResult;
 import com.dms.template.application.dto.TemplateSearchedResult;
 import com.dms.template.application.port.in.DownloadTemplateUseCase;
 import com.dms.template.application.port.in.GetTemplateUseCase;
+import com.dms.template.application.port.in.ListTemplateVersionsUseCase;
 import com.dms.template.application.port.in.SearchTemplateUseCase;
 import com.dms.template.application.port.out.TemplateRepositoryPort;
 import com.dms.template.application.query.DownloadTemplateQuery;
@@ -25,7 +26,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-class TemplateQueryService implements SearchTemplateUseCase, GetTemplateUseCase, DownloadTemplateUseCase {
+class TemplateQueryService implements SearchTemplateUseCase, GetTemplateUseCase, DownloadTemplateUseCase, ListTemplateVersionsUseCase {
 
     private final TemplateRepositoryPort templateRepositoryPort;
 
@@ -82,9 +83,13 @@ class TemplateQueryService implements SearchTemplateUseCase, GetTemplateUseCase,
     }
 
     private String getTemplateContent(Template template) {
-        if (!template.getVersions().isEmpty()) {
-            return template.getVersions().getFirst().getContentDefinition();
-        }
-        return "{}";
+        return template.getLatestVersion()
+                .map(com.dms.template.domain.template.aggregate.entity.TemplateVersion::getContentDefinition)
+                .orElse("{}");
+    }
+
+    @Override
+    public PagedResult<com.dms.template.application.dto.TemplateVersionGottenResult> listTemplateVersions(com.dms.template.application.query.ListTemplateVersionsQuery query) {
+        return templateRepositoryPort.getTemplateVersions(query.templateId(), query.page(), query.size());
     }
 }

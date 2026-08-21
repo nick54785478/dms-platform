@@ -50,8 +50,9 @@
         <td>{{ template.name }}</td>
         <td>{{ template.description }}</td>
         <td>
-          <p-button icon="pi pi-pencil" severity="info" (onClick)="editTemplate(template.id)" tooltip="設計範本"></p-button>
-          <p-button icon="pi pi-file-edit" severity="success" class="ml-2" (onClick)="fillTemplate(template.id)" tooltip="填寫範本"></p-button>
+          <p-button icon="pi pi-pencil" severity="info" (onClick)="editTemplate(template.id)" pTooltip="設計範本"></p-button>
+          <p-button icon="pi pi-file-edit" severity="success" class="ml-2" (onClick)="fillTemplate(template.id)" pTooltip="填寫範本"></p-button>
+          <p-button icon="pi pi-history" severity="secondary" class="ml-2" (onClick)="viewHistory(template.id)" pTooltip="版本紀錄"></p-button>
         </td>
       </tr>
     </ng-template>
@@ -85,4 +86,38 @@
     <p-button label="取消 (Cancel)" icon="pi pi-times" severity="secondary" (onClick)="displayCreateDialog = false"></p-button>
     <p-button label="建立 (Create)" icon="pi pi-check" (onClick)="createTemplate()" [disabled]="!newTemplate.templateType || !newTemplate.templateCode || !newTemplate.name" [loading]="isCreating"></p-button>
   </ng-template>
+</p-dialog>
+
+<!-- 歷史紀錄對話框 -->
+<p-dialog header="範本版本紀錄" [(visible)]="displayHistoryDialog" [modal]="true" [style]="{ width: '60vw' }" [maximizable]="true">
+  <p-table [value]="historyVersions" [loading]="loadingHistory" [paginator]="true" [rows]="10" [totalRecords]="totalHistoryRecords" [lazy]="true" (onLazyLoad)="loadHistory($event)" dataKey="version">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>版本號 (Version)</th>
+        <th>狀態 (Status)</th>
+        <th>操作 (Actions)</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-v>
+      <tr>
+        <td>
+          <p-tag [severity]="v.status === 'PUBLISHED' ? 'success' : 'warning'" [value]="v.version"></p-tag>
+        </td>
+        <td>{{ v.status }}</td>
+        <td>
+          <p-button icon="pi pi-search" label="查看內容" size="small" (onClick)="viewVersionContent(v)"></p-button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="3" class="text-center">尚無版本紀錄。</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-dialog>
+
+<!-- 版本內容預覽對話框 -->
+<p-dialog [header]="'內容預覽 - ' + selectedVersionForView?.version" [(visible)]="displayContentDialog" [modal]="true" [style]="{ width: '50vw' }">
+  <pre style="background: #2b2b2b; color: #a9b7c6; padding: 1rem; border-radius: 8px; overflow-x: auto;">{{ selectedVersionForView?.contentDefinition }}</pre>
 </p-dialog>

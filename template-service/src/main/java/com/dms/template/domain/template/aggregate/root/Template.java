@@ -23,22 +23,34 @@ import java.util.Optional;
  */
 @Getter
 public class Template {
-    /** 聚合根的唯一識別碼 (Value Object) */
+    /**
+     * 聚合根的唯一識別碼 (Value Object)
+     */
     private final TemplateId id;
 
-    /** 範本的類型 (如: EXCEL, WORD, PDF 等) */
+    /**
+     * 範本的類型 (如: EXCEL, WORD, PDF 等)
+     */
     private final TemplateType templateType;
 
-    /** 範本的專屬代碼 (通常用於外部系統對接識別) */
+    /**
+     * 範本的專屬代碼 (通常用於外部系統對接識別)
+     */
     private final String templateCode;
 
-    /** 範本的顯示名稱 */
+    /**
+     * 範本的顯示名稱
+     */
     private String name;
 
-    /** 範本的詳細描述 */
+    /**
+     * 範本的詳細描述
+     */
     private String description;
 
-    /** 此範本所擁有的各個版本集合 (內部實體) */
+    /**
+     * 此範本所擁有的各個版本集合 (內部實體)
+     */
     private final List<TemplateVersion> versions;
 
     private Template(TemplateId id, TemplateType templateType, String templateCode, String name, String description, List<TemplateVersion> versions) {
@@ -101,7 +113,7 @@ public class Template {
         TemplateVersion newVersion = TemplateVersion.create(version, contentDefinition, variables);
         this.versions.add(newVersion);
     }
-    
+
     /**
      * 儲存草稿版本的領域邏輯.
      *
@@ -119,12 +131,27 @@ public class Template {
         Optional<TemplateVersion> draftOpt = this.versions.stream()
                 .filter(v -> v.getStatus() == TemplateStatus.DRAFT)
                 .findFirst();
-                
+
         if (draftOpt.isPresent()) {
             draftOpt.get().updateContent(contentDefinition, variables);
         } else {
-            // 如果沒有，自動建立 V1.0-DRAFT 作為初始版本
-            this.addVersion("V1.0-DRAFT", contentDefinition, variables);
+            // 如果沒有草稿，找出目前已發佈的最高版本號來決定下一個草稿版號
+            int maxMajor = 0;
+            for (TemplateVersion v : this.versions) {
+                if (v.getStatus() == TemplateStatus.PUBLISHED || v.getStatus() == TemplateStatus.ARCHIVED) {
+                    String verStr = v.getVersion();
+                    if (verStr.startsWith("V") && verStr.contains(".0")) {
+                        try {
+                            int major = Integer.parseInt(verStr.substring(1, verStr.indexOf(".0")));
+                            maxMajor = Math.max(maxMajor, major);
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+            }
+            int nextMajor = maxMajor + 1;
+            String nextVersion = "V" + nextMajor + ".0-DRAFT";
+            this.addVersion(nextVersion, contentDefinition, variables);
         }
     }
 
@@ -153,5 +180,41 @@ public class Template {
 
     public List<TemplateVersion> getVersions() {
         return Collections.unmodifiableList(versions);
+    }
+
+    /**
+     * 取得最新版本.
+     * 優先回傳草稿 (DRAFT)，若無草稿則回傳版號最高的版本.
+     */
+    public Optional<TemplateVersion> getLatestVersion() {
+        if (versions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<TemplateVersion> draftOpt = versions.stream()
+                .filter(v -> v.getStatus() == TemplateStatus.DRAFT)
+                .findFirst();
+
+        if (draftOpt.isPresent()) {
+            return draftOpt;
+        }
+
+        // 如果沒有 DRAFT，尋找 major version 最高的
+        return versions.stream()
+                .max((v1, v2) -> {
+                    int m1 = extractMajor(v1.getVersion());
+                    int m2 = extractMajor(v2.getVersion());
+                    return Integer.compare(m1, m2);
+                });
+    }
+
+    private int extractMajor(String versionStr) {
+        if (versionStr != null && versionStr.startsWith("V") && versionStr.contains(".0")) {
+            try {
+                return Integer.parseInt(versionStr.substring(1, versionStr.indexOf(".0")));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return 0;
     }
 }

@@ -66,4 +66,10 @@ export class TemplateService {
   fillAndDownloadTemplate(id: string, data: any): Observable<Blob> {
     return this.http.post(`${this.API_URL}/${id}/download`, data, { responseType: 'blob' });
   }
+
+  getTemplateVersions(id: string, page: number = 0, size: number = 10): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/${id}/versions`, {
+      params: { page: page.toString(), size: size.toString() }
+    });
+  }
 }

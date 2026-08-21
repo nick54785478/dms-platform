@@ -1,6 +1,7 @@
 package com.dms.template.application.assembler;
 
 import com.dms.template.application.dto.TemplateGottenResult;
+import com.dms.template.domain.template.aggregate.entity.TemplateVersion;
 import com.dms.template.domain.template.aggregate.root.Template;
 import org.springframework.stereotype.Component;
 
@@ -14,10 +15,13 @@ public class TemplateDtoAssembler {
         if (template == null) {
             return null;
         }
-        String draftJson = null;
-        if (template.getVersions() != null && !template.getVersions().isEmpty()) {
-            draftJson = template.getVersions().get(0).getContentDefinition();
-        }
+        String draftJson = template.getLatestVersion()
+                .map(TemplateVersion::getContentDefinition)
+                .orElse(null);
+                
+        String latestVersion = template.getLatestVersion()
+                .map(TemplateVersion::getVersion)
+                .orElse(null);
 
         return new TemplateGottenResult(
                 template.getId().getValue(),
@@ -25,7 +29,8 @@ public class TemplateDtoAssembler {
                 template.getTemplateCode(),
                 template.getName(),
                 template.getDescription(),
-                draftJson
+                draftJson,
+                latestVersion
         );
     }
 }

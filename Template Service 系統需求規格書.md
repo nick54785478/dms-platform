@@ -22,8 +22,15 @@ Template Service 隸屬於 Application/Domain Layer 的微服務，主要職責�
 
 ### 2.2 文件生成 (Document Generation)
 * **資料合併渲染 (Data Merging)：** 接收外部業務服務傳遞的 JSON 格式 Payload 與指定的範本 ID/Version，執行變數替換與格式化。
-* **多格式支援：** 支援生成 Word (docx), PDF 等常見格式。
-* **非同步生成機制：** 針對巨量資料或大型文件的生成，提供非同步任務提交介面，完成後透過 Message Queue 發送 `DocumentGeneratedEvent`。
+* **多格式支援：** 支援生成 Excel (xlsx), PDF 等常見格式。
+
+### 2.3 PDF 區塊化範本設計 (Block-based PDF Template Architecture)
+針對 PDF 範本的設計與渲染，系統採用**區塊化 (Block-based) 與 HTML 轉印**的架構，以支援高靈活度的動態排版與擴展性：
+* **前端區塊化編輯 (Block-based Editing)：** 捨棄傳統上傳固定實體 PDF (AcroForm) 的方式，改為由前端拖拉元件庫（如 `TitleBlock`, `TextBlock`, `TableBlock`, `SignatureBlock` 等）組合彈性版面。
+* **中介 JSON 儲存 (Draft JSON)：** 範本設計內容序列化為 JSON 格式儲存於資料庫，結構包含頁面設定 (`pageSettings`) 與元件區塊陣列 (`blocks`)。
+* **後端 HTML to PDF 渲染引擎 (Java)：** 
+  * 接收 JSON 後，後端依照各 Block 定義與實際業務資料，透過樣板引擎 (如 Thymeleaf/FreeMarker) 動態組裝對應的 HTML 標籤結構。
+  * 最終透過轉換引擎 (如 `OpenHTMLToPDF` 或透過 Headless Browser) 將 HTML 結合 CSS 完美渲染為包含動態表格與分頁機制的 PDF，並輸出給使用者。
 
 ## 3. 領域模型設計 (Domain Model)
 
