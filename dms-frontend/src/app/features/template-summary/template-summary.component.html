@@ -1,0 +1,88 @@
+<div class="p-4">
+  <div class="flex justify-content-between align-items-center mb-4">
+    <h2>範本管理 (Template Summary)</h2>
+    <p-button label="建立範本 (Create Template)" icon="pi pi-plus" (onClick)="showCreateDialog()"></p-button>
+  </div>
+
+  <div class="card mb-4 p-fluid formgrid grid p-3 border-round border-1 surface-border align-items-end">
+    <div class="field col-12 md:col-3 mb-0">
+      <label for="searchType">範本類型 (Type)</label>
+      <p-dropdown id="searchType" [options]="templateTypes" [(ngModel)]="searchParams.templateType" placeholder="全部 (All)" [showClear]="true"></p-dropdown>
+    </div>
+    <div class="field col-12 md:col-3 mb-0">
+      <label for="searchCode">範本代號 (Code)</label>
+      <input pInputText id="searchCode" [(ngModel)]="searchParams.templateCode" />
+    </div>
+    <div class="field col-12 md:col-3 mb-0">
+      <label for="searchName">範本名稱 (Name)</label>
+      <input pInputText id="searchName" [(ngModel)]="searchParams.name" />
+    </div>
+    <div class="col-12 md:col-3 flex gap-2">
+      <p-button styleClass="white-space-nowrap" label="查詢 (Search)" icon="pi pi-search" (onClick)="search()"></p-button>
+      <p-button styleClass="white-space-nowrap" label="重置 (Reset)" icon="pi pi-refresh" severity="secondary" (onClick)="reset()"></p-button>
+    </div>
+  </div>
+
+  <p-table 
+    [value]="templates" 
+    [lazy]="true" 
+    (onLazyLoad)="loadTemplates($event)" 
+    dataKey="id" 
+    [tableStyle]="{ 'min-width': '75rem' }"
+    [paginator]="true" 
+    [rows]="10" 
+    [totalRecords]="totalRecords" 
+    [loading]="loading" 
+    [rowsPerPageOptions]="[10, 20, 50]">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>代碼 (Code)</th>
+        <th>類型 (Type)</th>
+        <th>名稱 (Name)</th>
+        <th>描述 (Description)</th>
+        <th>操作 (Actions)</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-template>
+      <tr>
+        <td>{{ template.templateCode }}</td>
+        <td>{{ template.templateType }}</td>
+        <td>{{ template.name }}</td>
+        <td>{{ template.description }}</td>
+        <td>
+          <p-button icon="pi pi-pencil" severity="info" (onClick)="editTemplate(template.id)" tooltip="設計範本"></p-button>
+          <p-button icon="pi pi-file-edit" severity="success" class="ml-2" (onClick)="fillTemplate(template.id)" tooltip="填寫範本"></p-button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog header="建立範本 (Create Template)" [(visible)]="displayCreateDialog" [modal]="true" [style]="{ width: '50vw' }">
+  <div class="p-fluid">
+    <div class="field mb-3">
+      <label for="type">範本類型 (Template Type) *</label>
+      <p-dropdown id="type" [options]="templateTypes" [(ngModel)]="newTemplate.templateType" placeholder="請選擇類型"></p-dropdown>
+    </div>
+    
+    <div class="field mb-3">
+      <label for="code">範本代號 (Template Code) *</label>
+      <input pInputText id="code" [(ngModel)]="newTemplate.templateCode" placeholder="例如: DOC_001" />
+    </div>
+    
+    <div class="field mb-3">
+      <label for="name">範本名稱 (Template Name) *</label>
+      <input pInputText id="name" [(ngModel)]="newTemplate.name" placeholder="例如: 採購申請單" />
+    </div>
+    
+    <div class="field mb-3">
+      <label for="description">範本描述 (Description)</label>
+      <input pInputText id="description" [(ngModel)]="newTemplate.description" />
+    </div>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <p-button label="取消 (Cancel)" icon="pi pi-times" severity="secondary" (onClick)="displayCreateDialog = false"></p-button>
+    <p-button label="建立 (Create)" icon="pi pi-check" (onClick)="createTemplate()" [disabled]="!newTemplate.templateType || !newTemplate.templateCode || !newTemplate.name" [loading]="isCreating"></p-button>
+  </ng-template>
+</p-dialog>

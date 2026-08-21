@@ -1,0 +1,27 @@
+<div class="p-4" *ngIf="isLoading">
+  <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i> 載入中...
+</div>
+
+<div class="p-4" *ngIf="!isLoading">
+  <div class="flex justify-content-between align-items-center mb-4">
+    <h2>填寫範本：{{ templateName }}</h2>
+    <p-button label="返回 (Back)" icon="pi pi-arrow-left" severity="secondary" (onClick)="goBack()"></p-button>
+  </div>
+
+  <div class="card p-4">
+    <div *ngIf="columns.length === 0" class="text-gray-500">
+      此範本尚未定義任何欄位 (無動態表單)。
+    </div>
+    
+    <div class="grid formgrid p-fluid">
+      <div class="field col-12 md:col-6" *ngFor="let col of columns">
+        <label [for]="col.field">{{ col.header }}</label>
+        <input pInputText [id]="col.field" [(ngModel)]="formData[col.field]" [placeholder]="'請輸入 ' + col.header" />
+      </div>
+    </div>
+    
+    <div class="mt-4 flex justify-content-end">
+      <p-button label="產生並下載 (Generate & Download)" icon="pi pi-download" [loading]="isDownloading" (onClick)="download()"></p-button>
+    </div>
+  </div>
+</div>

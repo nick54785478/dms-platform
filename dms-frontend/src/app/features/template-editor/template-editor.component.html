@@ -1,0 +1,105 @@
+<div class="p-4" *ngIf="!createdTemplate && !isLoading">
+  <div class="alert alert-warning">
+    找不到該範本或載入失敗！
+    <br>
+    {{ message }}
+  </div>
+</div>
+
+<div class="p-4" *ngIf="isLoading">
+  <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i> 載入中...
+</div>
+
+<div class="p-4" *ngIf="createdTemplate">
+  <!-- Info Section -->
+  <div class="card mb-4 p-4 border-round surface-border border-1 bg-white">
+    <div class="flex justify-content-between align-items-center mb-3">
+      <h2 class="m-0 text-primary">編輯範本 (Template Editor)</h2>
+      <span class="p-tag p-tag-success text-lg">ID: {{ createdTemplate.id }}</span>
+    </div>
+    
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-3">
+        <span class="text-500 block mb-1">類型 (Type)</span>
+        <span class="text-900 font-medium">{{ createdTemplate.templateType }}</span>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <span class="text-500 block mb-1">代碼 (Code)</span>
+        <span class="text-900 font-medium">{{ createdTemplate.templateCode }}</span>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <span class="text-500 block mb-1">名稱 (Name)</span>
+        <span class="text-900 font-medium">{{ createdTemplate.name }}</span>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <span class="text-500 block mb-1">描述 (Desc)</span>
+        <span class="text-900 font-medium">{{ createdTemplate.description || 'N/A' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design Section -->
+  <div class="card mb-4">
+    <h3>設計欄位 (Design Columns)</h3>
+    <div class="p-fluid formgrid grid mb-3" *ngFor="let col of columns; let i = index">
+      <div class="field col-5">
+        <label>欄位名稱 (Header)</label>
+        <input pInputText [(ngModel)]="col.header" (ngModelChange)="updateJson()" placeholder="例如: 姓名" />
+      </div>
+      <div class="field col-5">
+        <label>綁定屬性 (Field)</label>
+        <input pInputText [(ngModel)]="col.field" (ngModelChange)="updateJson()" placeholder="例如: name" />
+      </div>
+      <div class="field col-2 flex align-items-end">
+        <p-button icon="pi pi-trash" severity="danger" (onClick)="removeColumn(i)"></p-button>
+      </div>
+    </div>
+    <p-button label="新增欄位 (Add Column)" icon="pi pi-plus" (onClick)="addColumn()"></p-button>
+  </div>
+
+  <!-- JSON Output Section -->
+  <div class="card mb-4 surface-ground p-3 border-round">
+    <div class="flex justify-content-between align-items-center mb-2">
+      <h3 class="m-0">產生的 Draft JSON</h3>
+      <p-button icon="pi pi-code" label="進階編輯" (onClick)="showEditorDialog = true"></p-button>
+    </div>
+    <pre style="background: #2b2b2b; color: #a9b7c6; padding: 1rem; border-radius: 8px; overflow-x: auto;">{{ draftJson }}</pre>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex flex-column gap-2 mt-4">
+    <div *ngIf="message" class="text-green-600 font-bold mb-2">{{ message }}</div>
+    
+    <div class="flex gap-3">
+      <p-button 
+        [label]="isSaving ? 'Saving...' : '💾 儲存草稿 (Save Draft)'" 
+        severity="info" 
+        [disabled]="isSaving" 
+        (onClick)="saveDraft()">
+      </p-button>
+      
+      <p-button 
+        [label]="isPublishing ? 'Publishing...' : '🚀 發佈範本 (Publish)'" 
+        severity="success" 
+        [disabled]="isPublishing" 
+        (onClick)="publish()">
+      </p-button>
+      
+      <p-button 
+        label="下載測試 Excel (Download)" 
+        icon="pi pi-download" 
+        severity="help" 
+        (onClick)="downloadExcel()">
+      </p-button>
+    </div>
+  </div>
+</div>
+
+<!-- Raw JSON Editor Dialog -->
+<p-dialog header="編輯 JSON (Raw JSON)" [(visible)]="showEditorDialog" [modal]="true" [style]="{ width: '60vw' }">
+  <textarea pInputTextarea [(ngModel)]="draftJson" rows="15" style="width: 100%; font-family: monospace;"></textarea>
+  <ng-template pTemplate="footer">
+    <p-button label="取消 (Cancel)" icon="pi pi-times" severity="secondary" (onClick)="showEditorDialog = false"></p-button>
+    <p-button label="套用 (Apply)" icon="pi pi-check" (onClick)="applyJson()"></p-button>
+  </ng-template>
+</p-dialog>

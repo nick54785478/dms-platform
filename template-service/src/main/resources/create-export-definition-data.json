@@ -1,0 +1,71 @@
+{
+  "exportCode": "USER_ROLE_EXPORT",
+  "sheetName": "User Roles",
+  "rowWriterType": "Group",
+  "renderStrategyKey": "DEFAULT",
+  "fileType": "EXCEL",
+  "groupFields": [
+    {
+      "fieldPath": "username",
+      "sortOrder": 1,
+      "active": true
+    }
+  ],
+  "columns": [
+    {
+      "fieldPath": "username",
+      "headerName": "Username",
+      "mergeOnGroup": true,
+      "columnRole": "GROUP_HEADER",
+      "renderType": "GROUP_HEADER",
+      "mergeSpan": null,
+      "dataType": "STRING",
+      "width": null,
+      "orderIndex": 1
+    },
+    {
+      "fieldPath": "email",
+      "headerName": "Email",
+      "mergeOnGroup": false,
+      "columnRole": "DATA",
+      "renderType": "DATA_CONTENT",
+      "mergeSpan": null,
+      "dataType": "STRING",
+      "width": null,
+      "orderIndex": 2
+    },
+    {
+      "fieldPath": "city",
+      "headerName": "City",
+      "mergeOnGroup": true,
+      "columnRole": "DATA",
+      "renderType": "DATA_CONTENT",
+      "mergeSpan": null,
+      "dataType": "STRING",
+      "width": null,
+      "orderIndex": 3
+    },
+    {
+      "fieldPath": "roleName",
+      "headerName": "RoleName",
+      "mergeOnGroup": false,
+      "columnRole": "DATA",
+      "renderType": "DATA_CONTENT",
+      "mergeSpan": null,
+      "dataType": "STRING",
+      "width": null,
+      "orderIndex": 4
+    },
+    {
+      "fieldPath": "roleDescription",
+      "headerName": "RoleDescription",
+      "mergeOnGroup": false,
+      "columnRole": "DATA",
+      "renderType": "DATA_CONTENT",
+      "mergeSpan": null,
+      "dataType": "STRING",
+      "width": null,
+      "orderIndex": 5
+    }
+  ]
+}

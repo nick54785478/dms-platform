@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "name": "ADMIN",
+    "description": "System administrator with full access"
+  },
+  {
+    "id": 2,
+    "name": "USER",
+    "description": "Regular user with basic permissions"
+  },
+  {
+    "id": 3,
+    "name": "MANAGER",
+    "description": "Manager with team and report access"
+  },
+  {
+    "id": 4,
+    "name": "AUDITOR",
+    "description": "Read-only access for audit purposes"
+  },
+  {
+    "id": 5,
+    "name": "GUEST",
+    "description": "Temporary or limited access user"
+  }
+]
