@@ -1,24 +1,15 @@
-package com.example.demo.presentation.dto;
+package com.example.demo.presentation.assembler;
 
 import com.example.demo.domain.file.aggregate.root.FileMetadata;
+import com.example.demo.presentation.resource.out.FileUploadedResource;
+import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+@Component
+public class FileResourceAssembler {
 
-public record FileResponse(
-    String id,
-    String originalFileName,
-    String mimeType,
-    Long size,
-    String checksum,
-    String type,
-    Map<String, String> tags,
-    String status,
-    LocalDateTime createdAt
-) {
-    public static FileResponse fromDomain(FileMetadata metadata) {
+    public FileUploadedResource toFileUploadedResource(FileMetadata metadata) {
         if (metadata == null) return null;
-        return new FileResponse(
+        return new FileUploadedResource(
             metadata.getId(),
             metadata.getOriginalFileName(),
             metadata.getMimeType(),

@@ -1,0 +1,9 @@
+:host ::ng-deep .search-bar .p-dropdown,
+:host ::ng-deep .search-bar input.p-inputtext {
+    height: 42px !important;
+}
+
+:host ::ng-deep .search-bar .p-dropdown .p-dropdown-label {
+    display: flex;
+    align-items: center;
+}

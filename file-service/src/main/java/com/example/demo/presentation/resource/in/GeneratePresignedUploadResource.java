@@ -1,8 +1,8 @@
-package com.example.demo.presentation.dto;
+package com.example.demo.presentation.resource.in;
 
 import java.util.Map;
 
-public record PresignedUploadRequest(
+public record GeneratePresignedUploadResource(
     String type,
     String originalFileName,
     String mimeType,

@@ -1,4 +1,4 @@
-package com.example.demo.presentation.dto.event;
+package com.example.demo.presentation.event.message;
 
 public record FileBoundEventMessage(
     String fileId,

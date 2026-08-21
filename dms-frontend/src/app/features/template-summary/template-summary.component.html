@@ -4,22 +4,25 @@
     <p-button label="建立範本 (Create Template)" icon="pi pi-plus" (onClick)="showCreateDialog()"></p-button>
   </div>
 
-  <div class="card mb-4 p-fluid formgrid grid p-3 border-round border-1 surface-border align-items-end">
+  <div class="search-bar card mb-4 p-fluid formgrid grid p-3 border-round border-1 surface-border align-items-end">
     <div class="field col-12 md:col-3 mb-0">
       <label for="searchType">範本類型 (Type)</label>
       <p-dropdown id="searchType" [options]="templateTypes" [(ngModel)]="searchParams.templateType" placeholder="全部 (All)" [showClear]="true"></p-dropdown>
     </div>
     <div class="field col-12 md:col-3 mb-0">
       <label for="searchCode">範本代號 (Code)</label>
-      <input pInputText id="searchCode" [(ngModel)]="searchParams.templateCode" />
+      <input pInputText id="searchCode" [(ngModel)]="searchParams.templateCode" placeholder="全部 (All)" />
     </div>
     <div class="field col-12 md:col-3 mb-0">
       <label for="searchName">範本名稱 (Name)</label>
-      <input pInputText id="searchName" [(ngModel)]="searchParams.name" />
+      <input pInputText id="searchName" [(ngModel)]="searchParams.name" placeholder="全部 (All)" />
     </div>
-    <div class="col-12 md:col-3 flex gap-2">
-      <p-button styleClass="white-space-nowrap" label="查詢 (Search)" icon="pi pi-search" (onClick)="search()"></p-button>
-      <p-button styleClass="white-space-nowrap" label="重置 (Reset)" icon="pi pi-refresh" severity="secondary" (onClick)="reset()"></p-button>
+    <div class="field col-12 md:col-3 mb-0">
+      <label>&nbsp;</label>
+      <div class="flex gap-2">
+        <p-button styleClass="white-space-nowrap" label="查詢 (Search)" icon="pi pi-search" (onClick)="search()"></p-button>
+        <p-button styleClass="white-space-nowrap" label="重置 (Reset)" icon="pi pi-refresh" severity="secondary" (onClick)="reset()"></p-button>
+      </div>
     </div>
   </div>
 

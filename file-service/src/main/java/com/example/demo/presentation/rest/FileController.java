@@ -4,8 +4,9 @@ import com.example.demo.application.shared.command.PresignedUrlCommand;
 import com.example.demo.application.shared.command.UploadFileCommand;
 import com.example.demo.application.port.in.ManageFileUseCase;
 import com.example.demo.domain.file.aggregate.root.FileMetadata;
-import com.example.demo.presentation.dto.FileResponse;
-import com.example.demo.presentation.dto.PresignedUploadRequest;
+import com.example.demo.presentation.assembler.FileResourceAssembler;
+import com.example.demo.presentation.resource.out.FileUploadedResource;
+import com.example.demo.presentation.resource.in.GeneratePresignedUploadResource;
 import com.example.demo.application.shared.dto.PresignedUrlGeneratedResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,9 +31,11 @@ import java.util.Map;
 public class FileController {
 
     private final ManageFileUseCase manageFileUseCase;
+    private final FileResourceAssembler fileResourceAssembler;
 
-    public FileController(ManageFileUseCase manageFileUseCase) {
+    public FileController(ManageFileUseCase manageFileUseCase, FileResourceAssembler fileResourceAssembler) {
         this.manageFileUseCase = manageFileUseCase;
+        this.fileResourceAssembler = fileResourceAssembler;
     }
 
     @Operation(summary = "上傳小檔案", description = "直接上傳小檔案，檔案會先進入暫存區，並建立領域資料")
@@ -41,7 +44,7 @@ public class FileController {
             @ApiResponse(responseCode = "400", description = "請求參數錯誤")
     })
     @PostMapping("/upload")
-    public ResponseEntity<FileResponse> uploadFile(
+    public ResponseEntity<FileUploadedResource> uploadFile(
             @Parameter(description = "租戶 ID") @RequestHeader(value = "X-Tenant-ID", required = false) String tenantId,
             @Parameter(description = "要上傳的檔案", required = true) @RequestParam("file") MultipartFile file,
             @Parameter(description = "檔案業務類型") @RequestParam(value = "type", required = false) String type,
@@ -59,7 +62,7 @@ public class FileController {
         );
 
         FileMetadata metadata = manageFileUseCase.uploadFile(command);
-        return ResponseEntity.ok(FileResponse.fromDomain(metadata));
+        return ResponseEntity.ok(fileResourceAssembler.toFileUploadedResource(metadata));
     }
 
     @Operation(summary = "取得預先簽名上傳網址", description = "客戶端取得直接上傳至 Storage 的 URL，避免通過伺服器中轉")
@@ -69,7 +72,7 @@ public class FileController {
     @PostMapping("/presigned-upload")
     public ResponseEntity<PresignedUrlGeneratedResult> getPresignedUploadUrl(
             @Parameter(description = "租戶 ID") @RequestHeader(value = "X-Tenant-ID", required = false) String tenantId,
-            @RequestBody PresignedUploadRequest request) throws Exception {
+            @RequestBody GeneratePresignedUploadResource request) throws Exception {
 
         PresignedUrlCommand command = new PresignedUrlCommand(
                 tenantId,

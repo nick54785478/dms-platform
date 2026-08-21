@@ -4,9 +4,10 @@ import com.example.demo.application.shared.command.MultipartUploadCommand;
 import com.example.demo.application.port.in.MultipartUploadUseCase;
 import com.example.demo.application.shared.dto.MultipartUploadInitiatedResult;
 import com.example.demo.domain.file.aggregate.root.FileMetadata;
-import com.example.demo.presentation.dto.CompleteMultipartRequest;
-import com.example.demo.presentation.dto.FileResponse;
-import com.example.demo.presentation.dto.InitiateMultipartRequest;
+import com.example.demo.presentation.assembler.FileResourceAssembler;
+import com.example.demo.presentation.resource.in.CompleteMultipartUploadResource;
+import com.example.demo.presentation.resource.out.FileUploadedResource;
+import com.example.demo.presentation.resource.in.InitiateMultipartUploadResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,9 +28,11 @@ import org.springframework.web.bind.annotation.*;
 public class MultipartUploadController {
 
     private final MultipartUploadUseCase multipartUploadUseCase;
+    private final FileResourceAssembler fileResourceAssembler;
 
-    public MultipartUploadController(MultipartUploadUseCase multipartUploadUseCase) {
+    public MultipartUploadController(MultipartUploadUseCase multipartUploadUseCase, FileResourceAssembler fileResourceAssembler) {
         this.multipartUploadUseCase = multipartUploadUseCase;
+        this.fileResourceAssembler = fileResourceAssembler;
     }
 
     @Operation(summary = "初始化分段上傳", description = "啟動大檔案分段上傳任務，回傳 FileId 與 UploadId")
@@ -39,7 +42,7 @@ public class MultipartUploadController {
     @PostMapping("/initiate")
     public ResponseEntity<MultipartUploadInitiatedResult> initiate(
             @Parameter(description = "租戶 ID") @RequestHeader(value = "X-Tenant-ID", required = false) String tenantId,
-            @RequestBody InitiateMultipartRequest request) throws Exception {
+            @RequestBody InitiateMultipartUploadResource request) throws Exception {
 
         MultipartUploadCommand.InitiateCommand command = new MultipartUploadCommand.InitiateCommand(
                 tenantId,
@@ -75,10 +78,10 @@ public class MultipartUploadController {
             @ApiResponse(responseCode = "200", description = "合併成功，回傳完整檔案資訊")
     })
     @PostMapping("/{fileId}/{uploadId}/complete")
-    public ResponseEntity<FileResponse> complete(
+    public ResponseEntity<FileUploadedResource> complete(
             @Parameter(description = "檔案 ID", required = true) @PathVariable String fileId,
             @Parameter(description = "上傳任務 ID (UploadId)", required = true) @PathVariable String uploadId,
-            @RequestBody CompleteMultipartRequest request) throws Exception {
+            @RequestBody CompleteMultipartUploadResource request) throws Exception {
 
         MultipartUploadCommand.CompleteCommand command = new MultipartUploadCommand.CompleteCommand(
                 fileId,
@@ -87,7 +90,7 @@ public class MultipartUploadController {
         );
 
         FileMetadata metadata = multipartUploadUseCase.completeMultipartUpload(command);
-        return ResponseEntity.ok(FileResponse.fromDomain(metadata));
+        return ResponseEntity.ok(fileResourceAssembler.toFileUploadedResource(metadata));
     }
 
     @Operation(summary = "放棄分段上傳", description = "中止分段上傳任務，並清理 Storage 上已佔用的分段空間")

@@ -1,10 +1,10 @@
-package com.example.demo.presentation.event;
+package com.example.demo.presentation.event.handler;
 
 import com.example.demo.application.port.in.HandleFileEventUseCase;
 import com.example.demo.application.shared.command.FileBoundCommand;
 import com.example.demo.application.shared.command.FileDeletedCommand;
-import com.example.demo.presentation.dto.event.AttachmentDeletedEventMessage;
-import com.example.demo.presentation.dto.event.FileBoundEventMessage;
+import com.example.demo.presentation.event.message.AttachmentDeletedEventMessage;
+import com.example.demo.presentation.event.message.FileBoundEventMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class FileEventListener {
+public class FileEventHandler {
 
     private final HandleFileEventUseCase handleFileEventUseCase;
     private final ObjectMapper objectMapper;

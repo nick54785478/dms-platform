@@ -1,8 +1,8 @@
-package com.example.demo.presentation.dto;
+package com.example.demo.presentation.resource.in;
 
 import java.util.Map;
 
-public record InitiateMultipartRequest(
+public record InitiateMultipartUploadResource(
     String type,
     String originalFileName,
     String mimeType,
