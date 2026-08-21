@@ -69,12 +69,12 @@ public class TemplateController {
             @RequestBody(required = false) java.util.Map<String, Object> data) {
 
         DownloadTemplateQuery query = new DownloadTemplateQuery(id, data);
-        byte[] excelBytes = downloadTemplateUseCase.downloadTemplate(query);
+        com.dms.template.application.dto.DocumentGeneratedResult result = downloadTemplateUseCase.downloadTemplate(query);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"template_" + id + ".xlsx\"")
-                .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                .body(excelBytes);
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.fileName() + "\"")
+                .header(HttpHeaders.CONTENT_TYPE, result.contentType())
+                .body(result.content());
     }
 
     @Operation(summary = "儲存範本草稿", description = "更新範本設計器的 JSON 定義並儲存為 DRAFT")

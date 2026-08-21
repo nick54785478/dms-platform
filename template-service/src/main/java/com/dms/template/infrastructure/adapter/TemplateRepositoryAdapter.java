@@ -39,36 +39,34 @@ class TemplateRepositoryAdapter implements TemplateRepositoryPort {
 
     @Override
     public void save(Template template) {
-        TemplateJpaEntity entity = jpaRepository.findById(template.getId().getValue())
-                .orElseGet(TemplateJpaEntity::new);
-                
-        entity.setId(template.getId().getValue());
-        entity.setTemplateType(template.getTemplateType() != null ? template.getTemplateType().name() : null);
+        TemplateJpaEntity entity = jpaRepository.findById(template.getId().value())
+                .orElse(new TemplateJpaEntity());
+
+        entity.setId(template.getId().value());
+        entity.setTemplateType(template.getTemplateType().name());
         entity.setTemplateCode(template.getTemplateCode());
         entity.setName(template.getName());
         entity.setDescription(template.getDescription());
-        
-        // Map versions
+
+        // 處理 Versions (先清空再加入)
         entity.getVersions().clear();
-        if (template.getVersions() != null) {
-            for (TemplateVersion v : template.getVersions()) {
-                TemplateVersionJpaEntity versionEntity = new TemplateVersionJpaEntity();
-                versionEntity.setTemplate(entity);
-                versionEntity.setVersion(v.getVersion());
-                versionEntity.setContentDefinition(v.getContentDefinition());
-                versionEntity.setStatus(v.getStatus() != null ? v.getStatus().name() : null);
-                // Variables mapped as JSON string (omitted/empty list handled simply)
-                versionEntity.setVariablesJson("[]"); 
-                entity.getVersions().add(versionEntity);
-            }
+        for (com.dms.template.domain.template.aggregate.entity.TemplateVersion v : template.getVersions()) {
+            TemplateVersionJpaEntity versionEntity = new TemplateVersionJpaEntity();
+            versionEntity.setTemplate(entity);
+            versionEntity.setVersion(v.getVersion());
+            versionEntity.setContentDefinition(v.getContentDefinition());
+            versionEntity.setStatus(v.getStatus() != null ? v.getStatus().name() : null);
+            // Variables mapped as JSON string (omitted/empty list handled simply)
+            versionEntity.setVariablesJson("[]"); 
+            entity.getVersions().add(versionEntity);
         }
-        
+
         jpaRepository.save(entity);
     }
 
     @Override
     public Optional<Template> findById(TemplateId id) {
-        return jpaRepository.findById(id.getValue()).map(entity -> {
+        return jpaRepository.findById(id.value()).map(entity -> {
             TemplateType type = entity.getTemplateType() != null ? TemplateType.valueOf(entity.getTemplateType()) : null;
             
             List<TemplateVersion> domainVersions = new ArrayList<>();

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>PDF Document</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .subheader {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .text {
+            margin-bottom: 15px;
+        }
+        .split-block {
+            margin-bottom: 15px;
+        }
+        .split-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 0;
+        }
+        .split-table td {
+            border: none;
+            padding: 10px;
+            vertical-align: top;
+        }
+        .split-table td.split-left {
+            border-right: 1px solid #333;
+            padding-right: 15px;
+        }
+        .split-table td.split-right {
+            padding-left: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <th:block th:each="block : ${blocks}">
+        
+        <!-- Header Block -->
+        <div th:if="${block.get('type') == 'header'}" class="header"
+             th:style="'text-align:' + ${block.get('align') != null ? block.get('align') : 'center'}">
+            <span th:text="${data?.get(block.get('field'))}">Header</span>
+        </div>
+
+        <!-- Subheader Block -->
+        <div th:if="${block.get('type') == 'subheader'}" class="subheader"
+             th:style="'text-align:' + ${block.get('align') != null ? block.get('align') : 'center'}">
+            <span th:text="${data?.get(block.get('field'))}">Subheader</span>
+        </div>
+
+        <!-- Text Block -->
+        <div th:if="${block.get('type') == 'text'}" class="text"
+             th:style="'text-align:' + ${block.get('align') != null ? block.get('align') : 'left'}">
+            <span th:text="${data?.get(block.get('field'))}" style="white-space: pre-wrap;">Text content</span>
+        </div>
+
+        <!-- Split Block -->
+        <div th:if="${block.get('type') == 'split'}" class="split-block">
+            <table class="split-table">
+                <tr>
+                    <td class="split-left">
+                        <div style="white-space: pre-wrap;" th:text="${data?.get(block.get('leftField'))}">Left content</div>
+                    </td>
+                    <td class="split-right">
+                        <div style="white-space: pre-wrap;" th:text="${data?.get(block.get('rightField'))}">Right content</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Table Block -->
+        <div th:if="${block.get('type') == 'table'}">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:each="col : ${block.get('columns')}" th:text="${col.get('header')}">Header</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- In a real scenario, block.dataSource points to a key in 'data' map -->
+                    <tr th:each="row : ${data.get(block.get('dataSource'))}">
+                        <td th:each="col : ${block.get('columns')}">
+                            <span th:text="${row.get(col.get('field'))}">Cell Data</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Image Block -->
+        <div th:if="${block.get('type') == 'image'}" class="image-block"
+             th:style="'text-align:' + (${block.get('align')} != null ? ${block.get('align')} : 'center') + '; margin-bottom: 15px;'">
+            <img th:if="${data?.get(block.get('imageField')) != null and data?.get(block.get('imageField')) != ''}" 
+                 th:src="${data?.get(block.get('imageField'))}" 
+                 th:style="${block.get('width') != null and block.get('width') != '' ? 'width:' + block.get('width') + '; max-width: 100%;' : 'max-width: 100%;'}" />
+        </div>
+
+        <!-- Signature Block -->
+        <div th:if="${block.get('type') == 'signature'}" class="signature">
+            <p>簽名/蓋章: ______________________</p>
+        </div>
+
+        <!-- Page Break Block -->
+        <div th:if="${block.get('type') == 'pagebreak'}" style="page-break-after: always;"></div>
+
+    </th:block>
+</body>
+</html>

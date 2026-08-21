@@ -93,7 +93,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
     private documentService: DocumentService,
     private confirmationService: ConfirmationService,
     private messageService: MessageService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.titleSearchSubscription = this.titleSearchSubject.pipe(
@@ -250,7 +250,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
         // 大檔案 (Multipart)
         const initResp = await lastValueFrom(this.documentService.initiateMultipartUpload(file.name, file.type, file.size));
         if (!initResp || !initResp.uploadId || !initResp.fileId) throw new Error('無法初始化分段上傳');
-        
+
         const partETags: Record<number, string> = {};
         const numParts = Math.ceil(file.size / CHUNK_SIZE);
         for (let i = 0; i < numParts; i++) {
@@ -308,12 +308,12 @@ export class DocumentListComponent implements OnInit, OnDestroy {
       this.messageService.add({ severity: 'warn', summary: 'Warning', detail: '此版本沒有關聯的檔案' });
       return;
     }
-    
+
     this.documentService.getPresignedDownloadUrl(fileId).subscribe({
       next: (url) => {
         const a = document.createElement('a');
         a.href = url;
-        a.download = ''; 
+        a.download = '';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -333,7 +333,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
       this.messageService.add({ severity: 'warn', summary: 'Warning', detail: '此文件沒有關聯的檔案' });
       return;
     }
-    
+
     this.documentService.getPresignedDownloadUrl(doc.fileId).subscribe({
       next: (url) => {
         const a = document.createElement('a');
@@ -358,7 +358,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
       this.messageService.add({ severity: 'warn', summary: 'Warning', detail: '此文件沒有關聯的檔案' });
       return;
     }
-    
+
     this.documentService.getPresignedPreviewUrl(doc.fileId).subscribe({
       next: (url) => {
         window.open(url, '_blank');

@@ -5,7 +5,6 @@ import com.dms.template.domain.template.aggregate.vo.TemplateId;
 import com.dms.template.domain.template.aggregate.vo.TemplateStatus;
 import com.dms.template.domain.template.aggregate.vo.TemplateVariable;
 import com.dms.template.domain.template.aggregate.vo.TemplateType;
-import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +20,6 @@ import java.util.Optional;
  * 此類別為純 Java (Pure Java) 實作，絕不依賴任何外部框架 (如 Spring, JPA 等) 或資料庫技術細節。
  * </p>
  */
-@Getter
 public class Template {
     /**
      * 聚合根的唯一識別碼 (Value Object)
@@ -64,6 +62,26 @@ public class Template {
 
     private Template(TemplateId id, TemplateType templateType, String templateCode, String name, String description) {
         this(id, templateType, templateCode, name, description, new ArrayList<>());
+    }
+
+    public TemplateId getId() {
+        return id;
+    }
+
+    public TemplateType getTemplateType() {
+        return templateType;
+    }
+
+    public String getTemplateCode() {
+        return templateCode;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     /**

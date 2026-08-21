@@ -38,8 +38,8 @@
     </div>
   </div>
 
-  <!-- Design Section -->
-  <div class="card mb-4">
+  <!-- Design Section (Excel Only) -->
+  <div class="card mb-4" *ngIf="createdTemplate?.templateType !== 'PDF'">
     <h3>設計欄位 (Design Columns)</h3>
     <div cdkDropList (cdkDropListDropped)="drop($event)">
       <div class="p-fluid formgrid grid mb-3 p-3 border-round surface-0 shadow-1 align-items-center" *ngFor="let col of columns; let i = index" cdkDrag>
@@ -60,6 +60,56 @@
       </div>
     </div>
     <p-button label="新增欄位 (Add Column)" icon="pi pi-plus" (onClick)="addColumn()"></p-button>
+  </div>
+  
+  <div class="card mb-4" *ngIf="createdTemplate?.templateType === 'PDF'">
+    <h3>PDF 頁面設定 (Page Settings)</h3>
+    <div class="p-fluid formgrid grid mb-4">
+      <div class="field col-12 md:col-4">
+        <label>頁面大小 (Size)</label>
+        <p-dropdown [options]="pdfSizeOptions" [(ngModel)]="pdfConfig.pageSettings.size" (onChange)="updatePdfJson()"></p-dropdown>
+      </div>
+    </div>
+
+    <h3>PDF 區塊設定 (PDF Blocks)</h3>
+    <div cdkDropList (cdkDropListDropped)="drop($event)">
+      <div class="p-fluid formgrid grid mb-2 p-2 border-round surface-0 shadow-1 align-items-center" *ngFor="let block of pdfConfig.blocks; let i = index" cdkDrag>
+        
+        <div class="col-fixed flex flex-column align-items-center justify-content-center cursor-move" style="width: 3rem" cdkDragHandle>
+          <i class="pi pi-bars text-500" style="font-size: 1.5rem"></i>
+          <span class="text-500 text-xs mt-1 font-bold">#{{ i + 1 }}</span>
+        </div>
+        
+        <div class="field col-2 mb-0">
+          <label class="text-sm">區塊類型</label>
+          <p-dropdown [options]="pdfBlockTypeOptions" [(ngModel)]="block.type" (onChange)="onBlockTypeChange(block, i)"></p-dropdown>
+        </div>
+        
+
+        
+        <div class="field col-2 mb-0" *ngIf="block.type === 'image'">
+          <label class="text-sm">寬度</label>
+          <input pInputText [(ngModel)]="block.width" (ngModelChange)="updatePdfJson()" style="width: 100%" placeholder="如: 100%" />
+        </div>
+        
+        <div class="field col mb-0 flex align-items-center justify-content-center" *ngIf="block.type === 'pagebreak'">
+            <div style="width: 100%; border-top: 2px dashed #999; text-align: center; line-height: 0.1em; margin: 15px 0;">
+                <span style="background:#fff; padding:0 10px; color:#666; font-weight:bold; font-size: 1rem;">✂️ 分頁符號</span>
+            </div>
+        </div>
+        
+        <div class="field col-2 mb-0" *ngIf="['header', 'subheader', 'text', 'image'].includes(block.type)">
+          <label class="text-sm">對齊</label>
+          <p-dropdown [options]="[{label:'左',value:'left'},{label:'中',value:'center'},{label:'右',value:'right'}]" [(ngModel)]="block.align" (onChange)="updatePdfJson()"></p-dropdown>
+        </div>
+        
+        <div class="field col-fixed mb-0 flex align-items-end justify-content-end ml-auto" style="width: 3rem">
+          <p-button icon="pi pi-trash" severity="danger" (onClick)="removePdfBlock(i)"></p-button>
+        </div>
+        
+      </div>
+    </div>
+    <p-button label="新增區塊 (Add Block)" icon="pi pi-plus" (onClick)="addPdfBlock()"></p-button>
   </div>
 
   <!-- JSON Output Section -->
@@ -90,12 +140,7 @@
         (onClick)="publish()">
       </p-button>
       
-      <p-button 
-        label="下載測試 Excel (Download)" 
-        icon="pi pi-download" 
-        severity="help" 
-        (onClick)="downloadExcel()">
-      </p-button>
+
     </div>
   </div>
 </div>
@@ -107,4 +152,16 @@
     <p-button label="取消 (Cancel)" icon="pi pi-times" severity="secondary" (onClick)="showEditorDialog = false"></p-button>
     <p-button label="套用 (Apply)" icon="pi pi-check" (onClick)="applyJson()"></p-button>
   </ng-template>
+</p-dialog>
+
+<!-- Preview PDF Dialog -->
+<p-dialog header="預覽 PDF (PDF Preview)" [(visible)]="showPreviewDialog" [modal]="true" [style]="{ width: '80vw' }" [maximizable]="true">
+  <div *ngIf="isPreviewLoading" class="flex justify-content-center align-items-center p-5">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i> <span class="ml-2 text-xl">產生中...</span>
+  </div>
+  <div *ngIf="!isPreviewLoading && previewUrl" style="height: 70vh;">
+    <object [data]="previewUrl" type="application/pdf" width="100%" height="100%">
+      您的瀏覽器不支援直接預覽 PDF。
+    </object>
+  </div>
 </p-dialog>

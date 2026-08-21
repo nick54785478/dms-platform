@@ -13,15 +13,46 @@
       此範本尚未定義任何欄位 (無動態表單)。
     </div>
     
-    <div class="grid formgrid p-fluid">
-      <div class="field col-12 md:col-6" *ngFor="let col of columns">
-        <label [for]="col.field">{{ col.header }}</label>
-        <input pInputText [id]="col.field" [(ngModel)]="formData[col.field]" [placeholder]="'請輸入 ' + col.header" />
+    <div class="grid" *ngIf="columns.length > 0">
+      <!-- 左側：填寫表單 -->
+      <div [class]="templateType === 'PDF' ? 'col-12 md:col-5 border-right-1 surface-border pr-4' : 'col-12'">
+        <div class="grid formgrid p-fluid">
+          <div class="field col-12" *ngFor="let col of columns">
+            <label [for]="col.field" class="font-bold">{{ col.header }}</label>
+            <input *ngIf="!col.isImage" pInputText [id]="col.field" [(ngModel)]="formData[col.field]" [placeholder]="'請輸入 ' + col.header" />
+            
+            <div *ngIf="col.isImage" class="p-inputgroup">
+               <input type="file" #fileInput style="display: none;" accept="image/*" (change)="onImageUpload($event, col.field)">
+               <input pInputText [id]="col.field" [(ngModel)]="formData[col.field]" placeholder="上傳圖片或直接輸入圖片網址" />
+               <p-button icon="pi pi-upload" styleClass="p-button-secondary" (onClick)="fileInput.click()"></p-button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4 flex gap-2 justify-content-end">
+          <p-button *ngIf="templateType === 'PDF'" label="重新整理預覽" icon="pi pi-refresh" severity="secondary" [loading]="isPreviewLoading" (onClick)="refreshPreview()"></p-button>
+          <p-button label="產生並下載" icon="pi pi-download" [loading]="isDownloading" (onClick)="download()"></p-button>
+        </div>
       </div>
-    </div>
-    
-    <div class="mt-4 flex justify-content-end">
-      <p-button label="產生並下載 (Generate & Download)" icon="pi pi-download" [loading]="isDownloading" (onClick)="download()"></p-button>
+      
+      <!-- 右側：PDF 即時預覽 -->
+      <div class="col-12 md:col-7 pl-4" *ngIf="templateType === 'PDF'">
+        <h3 class="mt-0 mb-3 text-600">即時預覽 (Live Preview)</h3>
+        <div *ngIf="isPreviewLoading" class="flex justify-content-center align-items-center" style="height: 60vh; background: #f8f9fa; border-radius: 8px;">
+          <i class="pi pi-spin pi-spinner text-primary" style="font-size: 2rem"></i> <span class="ml-2 text-xl">產生預覽中...</span>
+        </div>
+        <div *ngIf="!isPreviewLoading && previewUrl" style="height: 70vh; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+          <object [data]="previewUrl" type="application/pdf" width="100%" height="100%">
+            您的瀏覽器不支援直接預覽 PDF。
+          </object>
+        </div>
+        <div *ngIf="!previewUrl && !isPreviewLoading" class="flex justify-content-center align-items-center" style="height: 60vh; background: #f8f9fa; border: 1px dashed #ced4da; border-radius: 8px;">
+          <div class="text-center p-5 text-500">
+            <i class="pi pi-file-pdf mb-3" style="font-size: 3rem"></i>
+            <p class="m-0">請填寫左側表單，並點擊「重新整理預覽」來查看即時效果</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

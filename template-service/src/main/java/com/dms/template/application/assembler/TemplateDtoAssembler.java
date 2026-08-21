@@ -24,7 +24,7 @@ public class TemplateDtoAssembler {
                 .orElse(null);
 
         return new TemplateGottenResult(
-                template.getId().getValue(),
+                template.getId().value(),
                 template.getTemplateType() != null ? template.getTemplateType().name() : null,
                 template.getTemplateCode(),
                 template.getName(),

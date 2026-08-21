@@ -5,10 +5,12 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DropdownModule } from 'primeng/dropdown';
 import { TemplateService } from '../../core/services/template.service';
 import { ActivatedRoute } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-template-editor',
@@ -19,6 +21,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
     TableModule,
     ButtonModule,
     InputTextModule,
+    InputTextareaModule,
     DialogModule,
     DropdownModule,
     DragDropModule
@@ -30,19 +33,48 @@ export class TemplateEditorComponent implements OnInit {
 
   templateId: string = '';
   createdTemplate: any = null;
+  isLoading = false;
+  isPublishing = false;
+  message = '';
+  draftJson: string | null = null;
 
-  // JSON Draft Data
-  draftJson: string = '';
+  // PDF Draft Data
+  pdfConfig: { pageSettings: any, blocks: any[] } = {
+    pageSettings: { size: 'A4', orientation: 'portrait', margin: '20mm' },
+    blocks: []
+  };
+  
+  // Preview State
+  showPreviewDialog = false;
+  previewUrl: SafeResourceUrl | null = null;
+  isPreviewLoading = false;
+
+  // Dropdown options
+  pdfSizeOptions = [
+    { label: 'A4', value: 'A4' },
+    { label: 'Letter', value: 'Letter' }
+  ];
+  pdfBlockTypeOptions = [
+    { label: '標題 (Header)', value: 'header' },
+    { label: '副標題 (Subheader)', value: 'subheader' },
+    { label: '內文 (Text)', value: 'text' },
+    { label: '左右並排 (Split)', value: 'split' },
+    { label: '圖片 (Image)', value: 'image' },
+    { label: '表格 (Table)', value: 'table' },
+    { label: '分頁符號 (Page Break)', value: 'pagebreak' },
+    { label: '簽名 (Signature)', value: 'signature' }
+  ];
+
+  showEditorDialog = false;
+  isSaving = false;
   columns: any[] = [];
 
-  // States
-  isSaving = false;
-  isPublishing = false;
-  isLoading = false;
-  message = '';
-  showEditorDialog = false;
 
-  constructor(private templateService: TemplateService, private route: ActivatedRoute) {
+  constructor(
+    private templateService: TemplateService, 
+    private route: ActivatedRoute,
+    private sanitizer: DomSanitizer
+  ) {
   }
   
   ngOnInit(): void {
@@ -62,18 +94,33 @@ export class TemplateEditorComponent implements OnInit {
         this.createdTemplate = res;
         this.isLoading = false;
         
-        // Restore Draft JSON to columns
-        if (res.draftJson) {
-          try {
-            const parsed = JSON.parse(res.draftJson);
-            if (parsed.columns && Array.isArray(parsed.columns)) {
-              this.columns = parsed.columns;
-            }
-          } catch (e) {
-            console.error('Failed to parse draftJson', e);
+        if (this.createdTemplate.templateType === 'PDF') {
+          if (res.draftJson) {
+             this.draftJson = res.draftJson;
+             this.parsePdfJson();
+          } else {
+             this.pdfConfig = {
+               pageSettings: { size: 'A4', orientation: 'portrait', margin: '20mm' },
+               blocks: [
+                 { type: 'header', content: '新文件 (New Document)', align: 'center' },
+                 { type: 'text', content: '這是內文 (Content)...' }
+               ]
+             };
+             this.updatePdfJson();
           }
+        } else {
+          if (res.draftJson) {
+            try {
+              const parsed = JSON.parse(res.draftJson);
+              if (parsed.columns && Array.isArray(parsed.columns)) {
+                this.columns = parsed.columns;
+              }
+            } catch (e) {
+              console.error('Failed to parse draftJson', e);
+            }
+          }
+          this.updateJson();
         }
-        this.updateJson();
       },
       error: (err) => {
         this.isLoading = false;
@@ -83,6 +130,7 @@ export class TemplateEditorComponent implements OnInit {
     });
   }
 
+  // EXCEL Methods
   addColumn() {
     this.columns.push({ header: '', field: '' });
     this.updateJson();
@@ -94,19 +142,94 @@ export class TemplateEditorComponent implements OnInit {
   }
   
   drop(event: CdkDragDrop<any[]>) {
-    moveItemInArray(this.columns, event.previousIndex, event.currentIndex);
-    this.updateJson();
+    if (this.createdTemplate?.templateType === 'PDF') {
+      moveItemInArray(this.pdfConfig.blocks, event.previousIndex, event.currentIndex);
+      this.updatePdfJson();
+    } else {
+      moveItemInArray(this.columns, event.previousIndex, event.currentIndex);
+      this.updateJson();
+    }
   }
   
   updateJson() {
-    this.draftJson = JSON.stringify({ columns: this.columns }, null, 2);
+    if (this.createdTemplate?.templateType !== 'PDF') {
+      this.draftJson = JSON.stringify({ columns: this.columns }, null, 2);
+    }
+  }
+
+  // PDF Methods
+  addPdfBlock() {
+    const num = this.pdfConfig.blocks.length + 1;
+    this.pdfConfig.blocks.push({ type: 'text', field: `text_${num}` });
+    this.updatePdfJson();
+  }
+  
+  onBlockTypeChange(block: any, index: number) {
+    const num = index + 1;
+    if (block.type === 'split') {
+      block.leftField = `left_${num}`;
+      block.rightField = `right_${num}`;
+    } else if (block.type === 'image') {
+      block.imageField = `image_${num}`;
+    } else if (['header', 'subheader', 'text'].includes(block.type)) {
+      block.field = `${block.type}_${num}`;
+    }
+    this.updatePdfJson();
+  }
+  
+  removePdfBlock(index: number) {
+    this.pdfConfig.blocks.splice(index, 1);
+    this.updatePdfJson();
+  }
+
+  
+  updatePdfJson() {
+    // 清除舊版的靜態資料欄位，並根據當前區塊類型清除無用的綁定變數
+    const cleanedBlocks = this.pdfConfig.blocks.map(block => {
+      const { content, leftContent, rightContent, imageUrl, ...cleanBlock } = block;
+      
+      if (cleanBlock.type === 'image') {
+        delete cleanBlock.field;
+        delete cleanBlock.leftField;
+        delete cleanBlock.rightField;
+      } else if (cleanBlock.type === 'split') {
+        delete cleanBlock.field;
+        delete cleanBlock.imageField;
+      } else if (cleanBlock.type === 'pagebreak') {
+        delete cleanBlock.field;
+        delete cleanBlock.imageField;
+        delete cleanBlock.leftField;
+        delete cleanBlock.rightField;
+      } else {
+        delete cleanBlock.imageField;
+        delete cleanBlock.leftField;
+        delete cleanBlock.rightField;
+      }
+      
+      return cleanBlock;
+    });
+    this.draftJson = JSON.stringify({ ...this.pdfConfig, blocks: cleanedBlocks }, null, 2);
+  }
+  
+  parsePdfJson() {
+    try {
+      const parsed = JSON.parse(this.draftJson || '{}');
+      this.pdfConfig.pageSettings = parsed.pageSettings || { size: 'A4' };
+      this.pdfConfig.blocks = parsed.blocks || [];
+    } catch (e) {
+      console.error('Failed to parse PDF JSON', e);
+    }
   }
 
   applyJson() {
     try {
-      const parsed = JSON.parse(this.draftJson);
-      if (parsed.columns && Array.isArray(parsed.columns)) {
-        this.columns = parsed.columns;
+      if (this.createdTemplate?.templateType === 'PDF') {
+        this.parsePdfJson();
+      } else {
+        const parsed = JSON.parse(this.draftJson || '{}');
+        if (parsed.columns && Array.isArray(parsed.columns)) {
+          this.columns = parsed.columns;
+        }
       }
       this.showEditorDialog = false;
       this.message = '✅ JSON 已成功套用至表單！';
@@ -115,13 +238,13 @@ export class TemplateEditorComponent implements OnInit {
     }
   }
 
-  saveDraft() {
+  saveDraft(callback?: () => void) {
     if (!this.createdTemplate) return;
     
     this.isSaving = true;
     this.message = '';
     const req = {
-      contentDefinition: this.draftJson,
+      contentDefinition: this.draftJson || '',
       variables: []
     };
     
@@ -129,9 +252,9 @@ export class TemplateEditorComponent implements OnInit {
       next: () => {
         this.isSaving = false;
         this.message = '✅ 草稿 JSON 已儲存！';
-        // 儲存後重新向後端拉取最新範本狀態 (確保 latestVersion 被更新，例如從 V2.0-DRAFT 變成 V3.0-DRAFT)
         this.templateService.getTemplate(this.createdTemplate.id).subscribe(res => {
           this.createdTemplate = res;
+          if (callback) callback();
         });
       },
       error: (err) => {
@@ -141,6 +264,39 @@ export class TemplateEditorComponent implements OnInit {
       }
     });
   }
+
+  previewPdf() {
+    if (!this.createdTemplate) return;
+    
+    // First save the draft so the backend has the latest JSON
+    this.saveDraft(() => {
+      this.isPreviewLoading = true;
+      this.showPreviewDialog = true;
+      
+      // Dummy data for preview rendering
+      const dummyData = {
+        invoiceData: [
+          { item: 'Consulting', amount: 1500 },
+          { item: 'Development', amount: 3000 }
+        ]
+      };
+      
+      this.templateService.fillAndDownloadTemplate(this.createdTemplate.id, dummyData).subscribe({
+        next: (blob) => {
+          this.isPreviewLoading = false;
+          const url = window.URL.createObjectURL(blob);
+          this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+        },
+        error: (err) => {
+          this.isPreviewLoading = false;
+          this.message = '❌ 預覽載入失敗';
+          console.error(err);
+        }
+      });
+    });
+  }
+
+
 
   publish() {
     if (!this.createdTemplate) return;
