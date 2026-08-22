@@ -2,11 +2,11 @@ package com.example.dms.application.service;
 
 import com.example.dms.application.shared.command.CreateDocumentCommand;
 import com.example.dms.application.port.in.CreateDocumentUseCase;
-import com.example.dms.application.port.in.DeleteDocumentCommand;
+import com.example.dms.application.shared.command.DeleteDocumentCommand;
 import com.example.dms.application.port.in.DeleteDocumentUseCase;
-import com.example.dms.application.port.in.SearchDocumentQuery;
+import com.example.dms.application.shared.query.SearchDocumentQuery;
 import com.example.dms.application.port.in.SearchDocumentUseCase;
-import com.example.dms.application.port.in.UpdateDocumentCommand;
+import com.example.dms.application.shared.command.UpdateDocumentCommand;
 import com.example.dms.application.port.in.UpdateDocumentUseCase;
 import com.example.dms.application.port.out.DocumentRepositoryPort;
 import com.example.dms.application.port.out.EventOutboxPort;
@@ -64,7 +64,7 @@ class DocumentApplicationService implements CreateDocumentUseCase, DeleteDocumen
     @Override
     @Transactional
     public void deleteDocument(DeleteDocumentCommand command) {
-        Document document = documentRepositoryPort.findById(new DocumentId(command.getDocumentId()))
+        Document document = documentRepositoryPort.findById(new DocumentId(command.documentId()))
                 .orElseThrow(() -> new IllegalArgumentException("Document not found"));
 
         document.delete();
@@ -85,10 +85,10 @@ class DocumentApplicationService implements CreateDocumentUseCase, DeleteDocumen
     @Override
     @Transactional
     public DocumentGottenResult updateDocument(UpdateDocumentCommand command) {
-        Document document = documentRepositoryPort.findById(new DocumentId(command.getDocumentId()))
+        Document document = documentRepositoryPort.findById(new DocumentId(command.documentId()))
                 .orElseThrow(() -> new IllegalArgumentException("Document not found"));
         
-        document.update(command.getTitle(), command.getDescription());
+        document.update(command.title(), command.description());
         Document savedDocument = documentRepositoryPort.save(document);
         
         return DocumentGottenResult.fromDomain(savedDocument);
@@ -119,7 +119,7 @@ class DocumentApplicationService implements CreateDocumentUseCase, DeleteDocumen
 
     @Override
     @Transactional(readOnly = true)
-    public DocumentGottenResult getDocument(com.example.dms.application.shared.command.GetDocumentQuery query) {
+    public DocumentGottenResult getDocument(com.example.dms.application.shared.query.GetDocumentQuery query) {
         Document document = documentRepositoryPort.findById(new DocumentId(query.documentId()))
                 .orElseThrow(() -> new IllegalArgumentException("Document not found"));
         return DocumentGottenResult.fromDomain(document);

@@ -1,4 +1,4 @@
-package com.example.dms.application.shared.command;
+package com.example.dms.application.shared.query;
 
 public record GetDocumentQuery(String documentId) {
 }

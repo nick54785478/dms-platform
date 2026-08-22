@@ -1,5 +1,7 @@
 package com.example.dms.application.port.in;
 
+import com.example.dms.application.shared.query.SearchDocumentQuery;
+
 import com.example.dms.application.shared.dto.DocumentSearchedResult;
 import com.example.dms.application.shared.dto.PageGottenResult;
 

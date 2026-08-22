@@ -1,4 +1,4 @@
-package com.example.dms.application.port.in;
+package com.example.dms.application.shared.query;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateDocumentCommand {
-    private String documentId;
+public class SearchDocumentQuery {
+    private int page;
+    private int size;
     private String title;
-    private String description;
+    private String status;
 }

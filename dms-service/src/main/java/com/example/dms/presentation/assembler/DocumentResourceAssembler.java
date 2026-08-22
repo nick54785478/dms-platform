@@ -1,7 +1,7 @@
 package com.example.dms.presentation.assembler;
 
 import com.example.dms.application.shared.command.CreateDocumentCommand;
-import com.example.dms.application.port.in.UpdateDocumentCommand;
+import com.example.dms.application.shared.command.UpdateDocumentCommand;
 import com.example.dms.application.shared.dto.DocumentGottenResult;
 import com.example.dms.presentation.resource.in.CreateDocumentResource;
 import com.example.dms.presentation.resource.in.UpdateDocumentResource;

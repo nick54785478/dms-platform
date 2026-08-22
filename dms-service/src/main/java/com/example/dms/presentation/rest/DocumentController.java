@@ -1,11 +1,11 @@
 package com.example.dms.presentation.rest;
 
 import com.example.dms.application.port.in.CreateDocumentUseCase;
-import com.example.dms.application.port.in.DeleteDocumentCommand;
+import com.example.dms.application.shared.command.DeleteDocumentCommand;
 import com.example.dms.application.port.in.DeleteDocumentUseCase;
 import com.example.dms.application.port.in.GetDocumentUseCase;
-import com.example.dms.application.shared.command.GetDocumentQuery;
-import com.example.dms.application.port.in.SearchDocumentQuery;
+import com.example.dms.application.shared.query.GetDocumentQuery;
+import com.example.dms.application.shared.query.SearchDocumentQuery;
 import com.example.dms.application.port.in.SearchDocumentUseCase;
 import com.example.dms.application.port.in.UpdateDocumentUseCase;
 import com.example.dms.application.port.in.UploadDocumentVersionUseCase;
