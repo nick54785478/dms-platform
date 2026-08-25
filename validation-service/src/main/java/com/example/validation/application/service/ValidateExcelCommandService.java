@@ -6,6 +6,7 @@ import com.example.validation.application.port.out.ValidationPolicyRepositoryPor
 import com.example.validation.application.shared.command.ValidateExcelCommand;
 import com.example.validation.domain.mapping.aggregate.root.TemplateFieldMapping;
 import com.example.validation.domain.policy.aggregate.root.ValidationPolicy;
+import com.example.validation.domain.shared.vo.YesNo;
 import com.example.validation.infrastructure.cv.shared.ValidateErrorProperty;
 import com.example.validation.infrastructure.cv.shared.context.ContextRoot;
 import com.example.validation.infrastructure.cv.validator.CustomValidator;
@@ -36,8 +37,11 @@ class ValidateExcelCommandService implements ValidateExcelUseCase {
     public void validate(ValidateExcelCommand command) {
         log.debug("Validating excel for code: {}", command.code());
 
-        // 取出驗證規則
-        List<ValidationPolicy> policyList = validationPolicyRepositoryPort.findByCode(command.code());
+        // 取出驗證規則，並過濾出啟用的規則 (YesNo.Y)
+        List<ValidationPolicy> policyList = validationPolicyRepositoryPort.findByCode(command.code())
+                .stream()
+                .filter(policy -> policy.getActiveFlag() == YesNo.Y)
+                .toList();
         List<String> sheetNameList = policyList.stream().map(ValidationPolicy::getTemplateSheetName).toList();
 
         // 讀取多張表資料
