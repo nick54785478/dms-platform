@@ -1,4 +1,4 @@
-﻿package com.example.validation.application.port.out;
+package com.example.validation.application.port.out;
 
 /**
  * Excel 驗證輸出埠 (Outbound Port)

@@ -3,6 +3,7 @@ package com.example.validation.infrastructure.adapter;
 import com.example.validation.application.port.out.ExcelValidatorPort;
 import com.example.validation.application.port.out.ValidationPolicyRepositoryPort;
 import com.example.validation.domain.policy.aggregate.root.ValidationPolicy;
+import com.example.validation.domain.shared.vo.YesNo;
 import com.example.validation.infrastructure.cv.shared.ValidateErrorProperty;
 import com.example.validation.infrastructure.cv.shared.context.ContextRoot;
 import com.example.validation.infrastructure.cv.validator.CustomValidator;
@@ -28,8 +29,11 @@ class ExcelValidatorAdapter implements ExcelValidatorPort {
 
     @Override
     public void validateExcelData(String code, byte[] fileContent) {
-        // 取出驗證規則
-        List<ValidationPolicy> policyList = validationPolicyRepositoryPort.findByCode(code);
+        // 取出驗證規則，過濾出啟用的規則
+        List<ValidationPolicy> policyList = validationPolicyRepositoryPort.findByCode(code)
+                .stream()
+                .filter(policy -> policy.getActiveFlag() == YesNo.Y)
+                .toList();
         List<String> sheetNameList = policyList.stream().map(ValidationPolicy::getTemplateSheetName).toList();
 
         // 讀取多張表資料
