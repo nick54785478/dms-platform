@@ -30,6 +30,12 @@
 - **Transactional Outbox Pattern**：為了防止本地資料庫與 Kafka 訊息發佈之間的資料不一致，領域事件會與業務資料在同一個 Transaction 內寫入 `outbox_messages` 資料表。隨後由背景排程器可靠地將這些訊息轉發至 Kafka，確保**至少一次 (At-Least-Once)** 的傳遞保證。
 - **事件消費者 (Event Consumers)**：`file-service` 作為事件消費者，訂閱如 `FileBoundEvent` 與 `AttachmentDeletedEvent` 等事件，在背景安全地執行實體檔案的綁定與刪除操作。
 
+### 微服務邊界與 Bounded Context 切分策略
+本系統的微服務切分表面上看似基於技術功能 (I/O、渲染、規則引擎)，但本質上高度契合 DDD (領域驅動設計) 的**子領域 (Subdomain)** 分類與系統架構的非功能性需求，完美平衡了業務內聚力與系統穩定性：
+- **`dms-service` (核心領域 - Core Domain)**：系統的業務心臟，專注於文件管理、版本控制與狀態流轉。免除繁重 I/O 與運算後，運作極度快速穩定。
+- **`template-service` 與 `validation-service` (支撐子領域 - Supporting Subdomain)**：負責「表單範本管理」與「動態政策驗證」。它們擁有專屬的領域模型 (如 `TemplateVersion`, `ValidationPolicy`)，不僅支撐核心業務，更將高 CPU/記憶體消耗的運算 (PDF 渲染、SpEL 解析) 隔離，避免拖垮核心業務。
+- **`file-service` (通用子領域 - Generic Subdomain)**：專注於實體檔案的生命週期管理與大檔分片上傳 (Multipart Upload)。作為 I/O 密集型的基礎設施服務，與核心業務完全解耦，確保系統在高併發上傳時的容錯性與高可用性。
+
 ## 專案結構與技術堆疊
 
 此儲存庫為一個 Mono-repository，包含以下核心模組：
