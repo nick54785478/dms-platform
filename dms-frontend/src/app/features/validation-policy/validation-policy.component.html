@@ -1,0 +1,132 @@
+<div class="card p-4 surface-section border-round shadow-2 fadein animation-duration-500">
+    <p-toast></p-toast>
+    <p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
+
+    <div class="flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 text-3xl font-bold text-900 tracking-tight">驗證規則維護</h2>
+        <div class="flex gap-2" *ngIf="!hideSearchUI">
+            <span class="p-input-icon-left">
+                <i class="pi pi-search"></i>
+                <input pInputText type="text" [(ngModel)]="searchCode" (keyup.enter)="loadPolicies()" placeholder="搜尋代碼..." class="p-inputtext-sm w-15rem" />
+            </span>
+            <p-button label="搜尋" icon="pi pi-search" (onClick)="loadPolicies()" styleClass="p-button-secondary p-button-rounded p-button-outlined p-button-sm"></p-button>
+        </div>
+        
+        <div class="flex gap-2">
+            <!-- 隱藏的檔案選擇器 -->
+            <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx, .xls" style="display: none" />
+            <p-button label="下載測試範本" icon="pi pi-download" (onClick)="downloadTestTemplate()" styleClass="p-button-secondary p-button-rounded shadow-3 hover:-translate-y-1 transition-all transition-duration-200 p-button-sm"></p-button>
+            <p-button label="測試上傳檢核" icon="pi pi-upload" (onClick)="triggerUploadTest(fileInput)" styleClass="p-button-success p-button-rounded shadow-3 hover:-translate-y-1 transition-all transition-duration-200 p-button-sm"></p-button>
+            <p-button label="新增規則" icon="pi pi-plus" (onClick)="openNew()" styleClass="p-button-primary p-button-rounded shadow-3 hover:-translate-y-1 transition-all transition-duration-200 p-button-sm"></p-button>
+        </div>
+    </div>
+
+    <p-table #dt [value]="policies" [rows]="10" [paginator]="true" [loading]="loading"
+             responsiveLayout="scroll" [rowHover]="true" dataKey="id"
+             currentPageReportTemplate="顯示第 {first} 到 {last} 筆，共 {totalRecords} 筆" 
+             [showCurrentPageReport]="true"
+             styleClass="p-datatable-sm p-datatable-gridlines border-round-xl overflow-hidden shadow-1">
+             
+        <ng-template pTemplate="header">
+            <tr class="bg-primary-50">
+                <th pSortableColumn="code">唯一代碼 <p-sortIcon field="code"></p-sortIcon></th>
+                <th pSortableColumn="templateName">範本名稱 <p-sortIcon field="templateName"></p-sortIcon></th>
+                <th pSortableColumn="templateSheetName">Sheet 標籤 <p-sortIcon field="templateSheetName"></p-sortIcon></th>
+                <th pSortableColumn="mappingFieldName">對應欄位 <p-sortIcon field="mappingFieldName"></p-sortIcon></th>
+                <th pSortableColumn="type">驗證類型 <p-sortIcon field="type"></p-sortIcon></th>
+                <th pSortableColumn="rule">規則類型 <p-sortIcon field="rule"></p-sortIcon></th>
+                <th pSortableColumn="priorityNo">優先權 <p-sortIcon field="priorityNo"></p-sortIcon></th>
+                <th pSortableColumn="activeFlag" class="text-center">狀態 <p-sortIcon field="activeFlag"></p-sortIcon></th>
+                <th class="text-center" style="width: 10rem">操作</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-policy>
+            <tr class="hover:bg-primary-50 transition-colors transition-duration-200">
+                <td class="font-bold text-primary">{{policy.code}}</td>
+                <td class="font-medium text-800">{{policy.templateName}}</td>
+                <td>{{policy.templateSheetName}}</td>
+                <td>
+                    <span class="surface-200 text-700 px-2 py-1 border-round font-medium text-sm">{{policy.mappingFieldName}}</span>
+                </td>
+                <td>
+                    <span [class]="'badge-type badge-' + policy.type.toLowerCase()">{{policy.type}}</span>
+                </td>
+                <td>{{policy.rule}}</td>
+                <td class="text-center"><span class="font-bold text-primary">{{policy.priorityNo}}</span></td>
+                <td class="text-center">
+                    <i class="pi" [ngClass]="{'pi-check-circle text-green-500 text-xl': policy.activeFlag === 'Y', 'pi-times-circle text-pink-500 text-xl': policy.activeFlag === 'N'}"></i>
+                </td>
+                <td class="text-center">
+                    <p-button icon="pi pi-pencil" styleClass="p-button-rounded p-button-text p-button-info mr-2" (onClick)="editPolicy(policy)"></p-button>
+                    <p-button icon="pi pi-trash" styleClass="p-button-rounded p-button-text p-button-danger" (onClick)="deletePolicy(policy)"></p-button>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center p-5 text-500">目前沒有驗證規則</td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <p-dialog [(visible)]="policyDialog" [style]="{width: '650px'}" [header]="isEditMode ? '編輯驗證規則' : '新增驗證規則'" [modal]="true" styleClass="p-fluid">
+        <ng-template pTemplate="content">
+            <form [formGroup]="policyForm" class="mt-3">
+                <div class="formgrid grid">
+                    <div class="field col-6">
+                        <label for="code" class="font-medium text-700">唯一代碼 (Code) <span class="text-red-500">*</span></label>
+                        <input type="text" pInputText id="code" formControlName="code" required autofocus class="p-inputtext-sm"/>
+                        <small class="p-error" *ngIf="policyForm.get('code')?.invalid && policyForm.get('code')?.touched">請輸入唯一代碼</small>
+                    </div>
+                    <div class="field col-6">
+                        <label for="templateName" class="font-medium text-700">範本名稱 <span class="text-red-500">*</span></label>
+                        <input type="text" pInputText id="templateName" formControlName="templateName" required class="p-inputtext-sm"/>
+                        <small class="p-error" *ngIf="policyForm.get('templateName')?.invalid && policyForm.get('templateName')?.touched">請輸入範本名稱</small>
+                    </div>
+                    <div class="field col-6">
+                        <label for="templateSheetName" class="font-medium text-700">Sheet 標籤 <span class="text-red-500">*</span></label>
+                        <p-dropdown id="templateSheetName" [options]="sheetOptions" formControlName="templateSheetName" placeholder="選擇 Sheet 標籤" optionLabel="label" optionValue="value" appendTo="body"></p-dropdown>
+                        <small class="p-error" *ngIf="policyForm.get('templateSheetName')?.invalid && policyForm.get('templateSheetName')?.touched">請輸入或選擇 Sheet 標籤</small>
+                    </div>
+                    
+                    <div class="field col-6">
+                        <label for="mappingFieldName" class="font-medium text-700">對應欄位 (Mapping Field) <span class="text-red-500">*</span></label>
+                        <p-dropdown id="mappingFieldName" [options]="fieldOptions" formControlName="mappingFieldName" placeholder="選擇欄位" optionLabel="label" optionValue="value" [readonly]="!policyForm.get('templateSheetName')?.value" appendTo="body"></p-dropdown>
+                    </div>
+                    <div class="field col-6">
+                        <label for="type" class="font-medium text-700">驗證類型 <span class="text-red-500">*</span></label>
+                        <p-dropdown id="type" [options]="typeOptions" formControlName="type" placeholder="選擇類型" appendTo="body"></p-dropdown>
+                    </div>
+
+                    <div class="field col-8">
+                        <label for="rule" class="font-medium text-700">規則類型 (Rule) <span class="text-red-500">*</span></label>
+                        <input type="text" pInputText id="rule" formControlName="rule" required class="p-inputtext-sm"/>
+                    </div>
+                    <div class="field col-4">
+                        <label for="priorityNo" class="font-medium text-700">優先權 <span class="text-red-500">*</span></label>
+                        <input type="number" pInputText id="priorityNo" formControlName="priorityNo" required class="p-inputtext-sm"/>
+                    </div>
+
+                    <div class="field col-12">
+                        <label for="expression" class="font-medium text-700">Spring EL 運算式 (Expression) <span class="text-red-500">*</span></label>
+                        <textarea pInputText id="expression" formControlName="expression" required rows="3" class="font-code"></textarea>
+                    </div>
+                    
+                    <div class="field col-12">
+                        <label for="errorMessage" class="font-medium text-700">錯誤訊息 (Error Message) <span class="text-red-500">*</span></label>
+                        <textarea pInputText id="errorMessage" formControlName="errorMessage" required rows="2" class="font-code"></textarea>
+                    </div>
+
+                    <div class="field col-6" *ngIf="isEditMode">
+                        <label for="activeFlag" class="font-medium text-700">狀態</label>
+                        <p-dropdown id="activeFlag" [options]="activeFlagOptions" formControlName="activeFlag" appendTo="body"></p-dropdown>
+                    </div>
+                </div>
+            </form>
+        </ng-template>
+        <ng-template pTemplate="footer">
+            <button pButton pRipple label="取消" icon="pi pi-times" class="p-button-text p-button-secondary" (click)="hideDialog()"></button>
+            <button pButton pRipple label="儲存" icon="pi pi-check" class="p-button-primary" (click)="savePolicy()"></button>
+        </ng-template>
+    </p-dialog>
+</div>

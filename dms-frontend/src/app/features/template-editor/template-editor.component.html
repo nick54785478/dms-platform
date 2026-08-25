@@ -13,6 +13,9 @@
 <div class="p-4" *ngIf="createdTemplate">
   <!-- Info Section -->
   <div class="card mb-4 p-4 border-round surface-border border-1 bg-white">
+    <div class="flex mb-3">
+      <p-button icon="pi pi-arrow-left" label="返回列表 (Go Back)" [text]="true" (onClick)="goBack()"></p-button>
+    </div>
     <div class="flex justify-content-between align-items-center mb-3">
       <h2 class="m-0 text-primary">編輯範本 (Template Editor)</h2>
       <span class="p-tag p-tag-success text-lg">ID: {{ createdTemplate.id }}</span>
@@ -39,27 +42,60 @@
   </div>
 
   <!-- Design Section (Excel Only) -->
-  <div class="card mb-4" *ngIf="createdTemplate?.templateType !== 'PDF'">
-    <h3>設計欄位 (Design Columns)</h3>
-    <div cdkDropList (cdkDropListDropped)="drop($event)">
-      <div class="p-fluid formgrid grid mb-3 p-3 border-round surface-0 shadow-1 align-items-center" *ngFor="let col of columns; let i = index" cdkDrag>
-        <div class="col-1 flex justify-content-center cursor-move" cdkDragHandle>
-          <i class="pi pi-bars text-500" style="font-size: 1.5rem"></i>
+  <div class="mb-4" *ngIf="createdTemplate?.templateType !== 'PDF'">
+    <div class="flex justify-content-between align-items-center mb-3">
+      <h3 class="m-0">設計工作表 (Design Sheets)</h3>
+      <p-button label="新增工作表 (Add Sheet)" icon="pi pi-plus" (onClick)="addSheet()" severity="success"></p-button>
+    </div>
+
+    <!-- Sheet Loop -->
+    <div *ngFor="let sheet of sheets; let sIndex = index" class="card mb-4 border-1 surface-border p-3 bg-white">
+      <!-- Header -->
+      <div class="flex justify-content-between align-items-center mb-3 pb-2 border-bottom-1 surface-border">
+        <div class="flex align-items-center gap-3">
+          <p-button [icon]="sheet.collapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-down'" 
+                    [text]="true" 
+                    [rounded]="true" 
+                    (onClick)="toggleSheet(sIndex)"></p-button>
+          <label class="font-bold text-xl m-0 cursor-pointer" (click)="toggleSheet(sIndex)">工作表 (Sheet):</label>
+          <input pInputText [(ngModel)]="sheet.sheetName" (ngModelChange)="updateJson()" placeholder="例如: 員工清單" class="p-inputtext-sm font-bold" />
         </div>
-        <div class="field col-4 mb-0">
-          <label>欄位名稱 (Header)</label>
-          <input pInputText [(ngModel)]="col.header" (ngModelChange)="updateJson()" placeholder="例如: 姓名" />
+        <div class="flex align-items-center gap-2">
+          <span class="text-500 text-sm mr-2" *ngIf="sheet.collapsed">已隱藏 {{ sheet.columns.length }} 個欄位</span>
+          <p-button icon="pi pi-trash" label="刪除" severity="danger" (onClick)="removeSheet(sIndex)" [outlined]="true" size="small"></p-button>
         </div>
-        <div class="field col-5 mb-0">
-          <label>綁定屬性 (Field)</label>
-          <input pInputText [(ngModel)]="col.field" (ngModelChange)="updateJson()" placeholder="例如: name" />
+      </div>
+
+      <!-- Collapsible Body -->
+      <div *ngIf="!sheet.collapsed">
+        <!-- Column Drag and Drop within Sheet -->
+        <div cdkDropList (cdkDropListDropped)="drop($event, sIndex)">
+          <div class="flex align-items-center mb-2 py-2 border-bottom-1 surface-border" *ngFor="let col of sheet.columns; let cIndex = index" cdkDrag>
+            <div class="flex justify-content-center cursor-move mx-3" style="width: 2rem" cdkDragHandle>
+              <i class="pi pi-bars text-500 hover:text-primary" style="font-size: 1.2rem"></i>
+            </div>
+            
+            <div class="field mb-0 mr-4 flex-1">
+              <label class="text-sm block mb-1 text-600">欄位名稱 (Header)</label>
+              <input pInputText [(ngModel)]="col.header" (ngModelChange)="updateJson()" placeholder="例如: 姓名" class="w-full p-inputtext-sm" />
+            </div>
+            
+            <div class="field mb-0 mr-4 flex-1">
+              <label class="text-sm block mb-1 text-600">綁定屬性 (Field)</label>
+              <input pInputText [(ngModel)]="col.field" (ngModelChange)="updateJson()" placeholder="例如: name" class="w-full p-inputtext-sm" />
+            </div>
+            
+            <div class="flex align-items-end justify-content-center mx-3 mt-3">
+              <p-button icon="pi pi-times" severity="danger" [rounded]="true" [text]="true" (onClick)="removeColumn(sIndex, cIndex)"></p-button>
+            </div>
+          </div>
         </div>
-        <div class="field col-2 mb-0 flex align-items-end justify-content-end">
-          <p-button icon="pi pi-trash" severity="danger" (onClick)="removeColumn(i)"></p-button>
+        
+        <div class="mt-3 ml-3">
+          <p-button label="新增欄位 (Add Column)" icon="pi pi-plus" (onClick)="addColumn(sIndex)" [text]="true" severity="info"></p-button>
         </div>
       </div>
     </div>
-    <p-button label="新增欄位 (Add Column)" icon="pi pi-plus" (onClick)="addColumn()"></p-button>
   </div>
   
   <div class="card mb-4" *ngIf="createdTemplate?.templateType === 'PDF'">

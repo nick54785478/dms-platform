@@ -163,6 +163,10 @@ export class TemplateSummaryComponent implements OnInit {
     this.router.navigate(['/template-fill', id]);
   }
 
+  viewValidationPolicies(templateCode: string, templateName: string) {
+    this.router.navigate(['/validation-policies'], { queryParams: { templateCode, templateName } });
+  }
+
   // --- History Dialog state (歷史版本對話框狀態) ---
   displayHistoryDialog = false;
   historyVersions: any[] = [];

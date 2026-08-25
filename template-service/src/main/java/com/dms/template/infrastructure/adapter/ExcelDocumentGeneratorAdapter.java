@@ -34,40 +34,80 @@ class ExcelDocumentGeneratorAdapter implements DocumentGeneratorPort {
                 .map(com.dms.template.domain.template.aggregate.entity.TemplateVersion::getContentDefinition)
                 .orElse("{}");
 
-        String sheetName = template.getName() != null ? template.getName() : "Template";
-        List<String> headers = new ArrayList<>();
-        List<Object[]> dataset = new ArrayList<>();
+        List<ExcelUtil.SheetExportData> sheetsData = new ArrayList<>();
         
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(content);
-            JsonNode columnsNode = rootNode.path("columns");
             
-            if (columnsNode.isArray() && !columnsNode.isEmpty()) {
-                Object[] rowData = new Object[columnsNode.size()];
-                for (int i = 0; i < columnsNode.size(); i++) {
-                    JsonNode colNode = columnsNode.get(i);
-                    headers.add(colNode.path("header").asText());
-                    
-                    String field = colNode.path("field").asText();
-                    if (data != null && data.containsKey(field)) {
-                        rowData[i] = data.get(field);
-                    } else {
-                        rowData[i] = "";
-                    }
+            // 如果 JSON 中存在 "sheets" (新版格式)
+            if (rootNode.has("sheets") && rootNode.get("sheets").isArray()) {
+                JsonNode sheetsNode = rootNode.get("sheets");
+                for (JsonNode sheetNode : sheetsNode) {
+                    String sheetName = sheetNode.path("sheetName").asText("Sheet");
+                    JsonNode columnsNode = sheetNode.path("columns");
+                    sheetsData.add(buildSheetExportData(sheetName, columnsNode, data));
                 }
-                dataset.add(rowData);
             } else {
-                headers.add("No Columns Defined");
+                // 相容舊版 "columns" 格式
+                JsonNode columnsNode = rootNode.path("columns");
+                String sheetName = template.getName() != null ? template.getName() : "Template";
+                sheetsData.add(buildSheetExportData(sheetName, columnsNode, data));
+            }
+            
+            if (sheetsData.isEmpty()) {
+                 sheetsData.add(new ExcelUtil.SheetExportData("Template", List.of("No Template Defined"), List.of()));
             }
         } catch (Exception e) {
-            headers.add("Invalid Template JSON");
+            sheetsData.add(new ExcelUtil.SheetExportData("Error", List.of("Invalid Template JSON"), List.of()));
         }
 
-        byte[] bytes = ExcelUtil.exportDataAsByteArrayFromArrays(sheetName, headers, dataset);
+        byte[] bytes = ExcelUtil.exportMultiSheetDataAsByteArray(sheetsData);
         String fileName = "template_" + template.getId().value() + ".xlsx";
         String contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
         return new DocumentGeneratedResult(bytes, fileName, contentType);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private ExcelUtil.SheetExportData buildSheetExportData(String sheetName, JsonNode columnsNode, Map<String, Object> data) {
+        List<String> headers = new ArrayList<>();
+        List<String> fieldNames = new ArrayList<>();
+        
+        if (columnsNode != null && columnsNode.isArray() && !columnsNode.isEmpty()) {
+            for (JsonNode colNode : columnsNode) {
+                headers.add(colNode.path("header").asText());
+                fieldNames.add(colNode.path("field").asText());
+            }
+        } else {
+            headers.add("No Columns Defined");
+        }
+
+        List<Object[]> dataset = new ArrayList<>();
+        
+        if (data != null && data.containsKey(sheetName)) {
+            Object sheetDataObj = data.get(sheetName);
+            if (sheetDataObj instanceof List) {
+                List<Map<String, Object>> rows = (List<Map<String, Object>>) sheetDataObj;
+                for (Map<String, Object> rowMap : rows) {
+                    Object[] rowData = new Object[fieldNames.size()];
+                    for (int i = 0; i < fieldNames.size(); i++) {
+                        String field = fieldNames.get(i);
+                        rowData[i] = rowMap.containsKey(field) ? rowMap.get(field) : "";
+                    }
+                    dataset.add(rowData);
+                }
+            }
+        } else if (data != null && !data.isEmpty() && !fieldNames.isEmpty()) {
+            // Fallback for flat object (old payload from frontend before this PR)
+            Object[] rowData = new Object[fieldNames.size()];
+            for (int i = 0; i < fieldNames.size(); i++) {
+                String field = fieldNames.get(i);
+                rowData[i] = data.containsKey(field) ? data.get(field) : "";
+            }
+            dataset.add(rowData);
+        }
+
+        return new ExcelUtil.SheetExportData(sheetName, headers, dataset);
     }
 }

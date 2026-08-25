@@ -261,6 +261,23 @@ public class ExcelUtil {
     }
 
     /**
+     * 支援多個工作表與動態陣列資料匯出為 Excel 位元組陣列 (byte[]).
+     *
+     * @param sheetsData 每個工作表的資料定義集合
+     * @return 產生的 Excel 檔案二進位資料 (byte[])
+     */
+    public static byte[] exportMultiSheetDataAsByteArray(List<SheetExportData> sheetsData) {
+        try (XSSFWorkbook book = processMultiSheetWorkbookFromArrays(sheetsData);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            book.write(bos);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            log.error("轉換錯誤，產生報表失敗", e);
+            return new byte[0];
+        }
+    }
+
+    /**
      * 建立並處理 Excel 的 XSSFWorkbook (POJO 反射版).
      *
      * @param sheetName  工作表名稱
@@ -291,6 +308,22 @@ public class ExcelUtil {
         XSSFSheet sheet = book.createSheet(sheetName);
         Object[] headers = headerList.toArray();
         importData(sheet, headers, new ArrayList<>(rowDataSet)); // 用新 ArrayList 避免修改原 list 結構(importData會插header)
+        return book;
+    }
+
+    /**
+     * 建立並處理多個工作表的 Excel 的 XSSFWorkbook.
+     *
+     * @param sheetsData 多個工作表的資料集合
+     * @return 已經填滿表頭與資料的 {@link XSSFWorkbook} 實體
+     */
+    public static XSSFWorkbook processMultiSheetWorkbookFromArrays(List<SheetExportData> sheetsData) {
+        XSSFWorkbook book = new XSSFWorkbook();
+        for (SheetExportData sheetData : sheetsData) {
+            XSSFSheet sheet = book.createSheet(sheetData.getSheetName());
+            Object[] headers = sheetData.getHeaders().toArray();
+            importData(sheet, headers, new ArrayList<>(sheetData.getDataset()));
+        }
         return book;
     }
 
@@ -366,5 +399,17 @@ public class ExcelUtil {
             log.error("物件轉換發生非預期的錯誤");
         }
         return objectArray;
+    }
+
+    /**
+     * 封裝單一工作表 (Sheet) 匯出資料的資料結構.
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class SheetExportData {
+        private String sheetName;
+        private List<String> headers;
+        private List<Object[]> dataset;
     }
 }

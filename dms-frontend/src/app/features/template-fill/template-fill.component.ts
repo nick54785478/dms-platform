@@ -6,6 +6,8 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { TabViewModule } from 'primeng/tabview';
+import { TableModule } from 'primeng/table';
 import { TemplateService } from '../../core/services/template.service';
 
 /**
@@ -20,7 +22,9 @@ import { TemplateService } from '../../core/services/template.service';
     CommonModule,
     FormsModule,
     ButtonModule,
-    InputTextModule
+    InputTextModule,
+    TabViewModule,
+    TableModule
   ],
   templateUrl: './template-fill.component.html',
   styleUrls: ['./template-fill.component.css']
@@ -33,7 +37,7 @@ export class TemplateFillComponent implements OnInit {
   templateType: string = '';
 
   // --- 動態表單資料 ---
-  columns: any[] = [];
+  sheets: { sheetName: string, columns: any[] }[] = [];
   formData: { [key: string]: any } = {};
 
   // --- 畫面狀態 ---
@@ -84,18 +88,53 @@ export class TemplateFillComponent implements OnInit {
                   if (b.imageField) pdfCols.push({ field: b.imageField, header: `圖片網址: ${b.imageField}`, isImage: true });
                 });
               }
-              this.columns = pdfCols;
+              this.sheets = [{ sheetName: 'PDF 填寫區', columns: pdfCols }];
             } else {
-              // Excel: 依賴原本定義的 columns
-              this.columns = parsed.columns || [];
+              // Excel: 依賴原本定義的 sheets 或 fallback 到 columns
+              if (parsed.sheets && Array.isArray(parsed.sheets)) {
+                this.sheets = parsed.sheets;
+              } else if (parsed.columns && Array.isArray(parsed.columns)) {
+                // 將帶有 sheetName 的 flat columns 群組化
+                const sheetMap = new Map<string, any[]>();
+                parsed.columns.forEach((col: any) => {
+                  const sName = col.sheetName || 'Sheet1';
+                  if (!sheetMap.has(sName)) sheetMap.set(sName, []);
+                  sheetMap.get(sName)!.push(col);
+                });
+                this.sheets = Array.from(sheetMap.entries()).map(([name, cols]) => ({
+                  sheetName: name,
+                  columns: cols
+                }));
+              } else {
+                this.sheets = [];
+              }
             }
             
-            // 初始化 formData，將每個變數預設為空字串
-            this.columns.forEach(col => {
-              if (col.field) {
-                this.formData[col.field] = '';
-              }
-            });
+            // 初始化 formData
+            if (this.templateType === 'PDF') {
+              this.sheets.forEach(sheet => {
+                if (sheet.columns) {
+                  sheet.columns.forEach((col: any) => {
+                    if (col.field) {
+                      this.formData[col.field] = '';
+                    }
+                  });
+                }
+              });
+            } else {
+              // Excel 初始化為陣列，並塞入第一筆空白資料列
+              this.sheets.forEach(sheet => {
+                const emptyRow: any = {};
+                if (sheet.columns) {
+                  sheet.columns.forEach((col: any) => {
+                    if (col.field) {
+                      emptyRow[col.field] = '';
+                    }
+                  });
+                }
+                this.formData[sheet.sheetName] = [emptyRow];
+              });
+            }
           } catch (e) {
             console.error('Failed to parse draftJson', e);
           }
@@ -184,5 +223,30 @@ export class TemplateFillComponent implements OnInit {
    */
   goBack() {
     this.router.navigate(['/templates']);
+  }
+
+  // --- Inline Editable Table 相關方法 ---
+  addRow(sheetName: string) {
+    if (!this.formData[sheetName]) {
+      this.formData[sheetName] = [];
+    }
+    const emptyRow: any = {};
+    const sheet = this.sheets.find(s => s.sheetName === sheetName);
+    if (sheet && sheet.columns) {
+      sheet.columns.forEach((col: any) => {
+        if (col.field) {
+          emptyRow[col.field] = '';
+        }
+      });
+    }
+    this.formData[sheetName].push(emptyRow);
+  }
+
+  removeRow(sheetName: string, rowIndex: number) {
+    if (this.formData[sheetName] && this.formData[sheetName].length > 1) {
+      this.formData[sheetName].splice(rowIndex, 1);
+    } else {
+      alert('至少需保留一筆資料列！');
+    }
   }
 }

@@ -55,6 +55,7 @@
         <td>
           <p-button icon="pi pi-pencil" severity="info" (onClick)="editTemplate(template.id)" pTooltip="設計範本"></p-button>
           <p-button icon="pi pi-file-edit" severity="success" class="ml-2" (onClick)="fillTemplate(template.id)" pTooltip="填寫範本"></p-button>
+          <p-button *ngIf="template.templateType !== 'PDF'" icon="pi pi-shield" severity="warning" class="ml-2" (onClick)="viewValidationPolicies(template.templateCode, template.name)" pTooltip="驗證規則維護"></p-button>
           <p-button icon="pi pi-history" severity="secondary" class="ml-2" (onClick)="viewHistory(template.id)" pTooltip="版本紀錄"></p-button>
         </td>
       </tr>
@@ -65,17 +66,17 @@
 <p-dialog header="建立範本 (Create Template)" [(visible)]="displayCreateDialog" [modal]="true" [style]="{ width: '50vw' }">
   <div class="p-fluid">
     <div class="field mb-3">
-      <label for="type">範本類型 (Template Type) *</label>
+      <label for="type">範本類型 (Template Type) <span class="text-red-500">*</span></label>
       <p-dropdown id="type" [options]="templateTypes" [(ngModel)]="newTemplate.templateType" placeholder="請選擇類型"></p-dropdown>
     </div>
     
     <div class="field mb-3">
-      <label for="code">範本代號 (Template Code) *</label>
+      <label for="code">範本代號 (Template Code) <span class="text-red-500">*</span></label>
       <input pInputText id="code" [(ngModel)]="newTemplate.templateCode" placeholder="例如: DOC_001" />
     </div>
     
     <div class="field mb-3">
-      <label for="name">範本名稱 (Template Name) *</label>
+      <label for="name">範本名稱 (Template Name) <span class="text-red-500">*</span></label>
       <input pInputText id="name" [(ngModel)]="newTemplate.name" placeholder="例如: 採購申請單" />
     </div>
     

@@ -58,3 +58,8 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
 }
+
+/* Global utility classes */
+.text-red-500 {
+    color: #ef4444 !important;
+}

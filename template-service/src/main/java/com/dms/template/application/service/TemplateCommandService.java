@@ -8,8 +8,10 @@ import com.dms.template.application.dto.TemplateGottenResult;
 import com.dms.template.application.port.in.CreateTemplateUseCase;
 import com.dms.template.application.port.in.PublishTemplateUseCase;
 import com.dms.template.application.port.in.SaveTemplateDraftUseCase;
+import com.dms.template.application.port.out.TemplateMessagePublisherPort;
 import com.dms.template.application.port.out.TemplateRepositoryPort;
 import com.dms.template.domain.template.aggregate.root.Template;
+import com.dms.template.domain.template.event.TemplatePublishedEvent;
 import com.dms.template.domain.template.aggregate.vo.TemplateId;
 import com.dms.template.domain.template.aggregate.vo.TemplateType;
 import com.dms.template.domain.template.exception.TemplateNotFoundException;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 class TemplateCommandService implements CreateTemplateUseCase, SaveTemplateDraftUseCase, PublishTemplateUseCase {
 
     private final TemplateRepositoryPort templateRepositoryPort;
+    private final TemplateMessagePublisherPort templateMessagePublisherPort;
     private final TemplateDtoAssembler assembler;
 
     @Override
@@ -77,5 +80,19 @@ class TemplateCommandService implements CreateTemplateUseCase, SaveTemplateDraft
 
         // 3. 儲存狀態
         templateRepositoryPort.save(template);
+
+        // 4. 發佈領域事件
+        String publishedVersion = command.version().replace("-DRAFT", "");
+        template.getVersions().stream()
+                .filter(v -> v.getVersion().equals(publishedVersion))
+                .findFirst()
+                .ifPresent(v -> {
+                    TemplatePublishedEvent event = new TemplatePublishedEvent(
+                            template.getTemplateCode(),
+                            template.getTemplateType().name(),
+                            v.getContentDefinition()
+                    );
+                    templateMessagePublisherPort.publishTemplatePublishedEvent(event);
+                });
     }
 }

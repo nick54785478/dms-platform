@@ -50,7 +50,17 @@
 - 暴露 `Initiate`、`Presigned-Part` 與 `Complete` API，以實現分片上傳，避免大檔案串流耗盡後端記憶體。
 - 訂閱 Kafka 事件以完成實體檔案綁定與刪除作業。
 
-### 4. `docker-compose` (基礎設施)
+### 4. `template-service` (Spring Boot 4.1.0 + Java 21)
+- 負責處理各類表單範本 (Excel, PDF 等) 的定義與欄位解析。
+- 整合 **Thymeleaf** 與 **openhtmltopdf** 動態渲染並產出 PDF 文件。
+- 提供範本欄位擷取，並與前端連動進行欄位對應。
+
+### 5. `validation-service` (Spring Boot 4.1.0 + Java 22)
+- 專職處理表單與範本的動態邏輯驗證。
+- 核心實作基於 **Spring Expression Language (SpEL)** 打造彈性的動態驗證引擎。
+- 儲存並管理驗證政策 (Validation Policies)，並與 `template-service` 連動欄位定義。
+
+### 6. `docker-compose` (基礎設施)
 完全容器化的本地開發環境，包含：
 - **PostgreSQL 15**：作為 `dms-service` 與 `file-service` 的關聯式資料庫。
 - **Redis 7**：用於分散式快取與鎖 (Distributed Locking)。
@@ -84,13 +94,21 @@ cd file-service
 ```
 *(運行於 Port 8081)*
 
-### 3. 啟動 DMS Core Service
-開啟另一個新的終端機並啟動 DMS Service：
+### 3. 啟動其他微服務 (DMS / Template / Validation)
+開啟新的終端機並依序啟動各微服務：
 ```bash
+# DMS Service
 cd dms-service
 ./mvnw spring-boot:run
+
+# Template Service (運行於 Port 8082)
+cd ../template-service
+./mvnw spring-boot:run
+
+# Validation Service (運行於 Port 8083)
+cd ../validation-service
+./mvnw spring-boot:run
 ```
-*(運行於 Port 8082)*
 
 ### 4. 啟動 Frontend 前端應用
 最後，啟動 Angular 前端應用：

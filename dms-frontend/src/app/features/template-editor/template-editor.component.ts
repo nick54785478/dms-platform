@@ -8,7 +8,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DropdownModule } from 'primeng/dropdown';
 import { TemplateService } from '../../core/services/template.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
@@ -67,12 +67,13 @@ export class TemplateEditorComponent implements OnInit {
 
   showEditorDialog = false;
   isSaving = false;
-  columns: any[] = [];
+  sheets: { sheetName: string, columns: any[], collapsed?: boolean }[] = [];
 
 
   constructor(
     private templateService: TemplateService, 
     private route: ActivatedRoute,
+    private router: Router,
     private sanitizer: DomSanitizer
   ) {
   }
@@ -112,12 +113,27 @@ export class TemplateEditorComponent implements OnInit {
           if (res.draftJson) {
             try {
               const parsed = JSON.parse(res.draftJson);
-              if (parsed.columns && Array.isArray(parsed.columns)) {
-                this.columns = parsed.columns;
+              if (parsed.sheets && Array.isArray(parsed.sheets)) {
+                this.sheets = parsed.sheets.map((s: any) => ({ ...s, collapsed: false }));
+              } else if (parsed.columns && Array.isArray(parsed.columns)) {
+                // 將帶有 sheetName 的 flat columns 群組化
+                const sheetMap = new Map<string, any[]>();
+                parsed.columns.forEach((col: any) => {
+                  const sName = col.sheetName || 'Sheet1';
+                  if (!sheetMap.has(sName)) sheetMap.set(sName, []);
+                  sheetMap.get(sName)!.push(col);
+                });
+                this.sheets = Array.from(sheetMap.entries()).map(([name, cols]) => ({
+                  sheetName: name,
+                  columns: cols,
+                  collapsed: false
+                }));
               }
             } catch (e) {
               console.error('Failed to parse draftJson', e);
             }
+          } else {
+             this.sheets = [{ sheetName: 'Sheet1', columns: [], collapsed: false }];
           }
           this.updateJson();
         }
@@ -131,29 +147,44 @@ export class TemplateEditorComponent implements OnInit {
   }
 
   // EXCEL Methods
-  addColumn() {
-    this.columns.push({ header: '', field: '' });
+  addSheet() {
+    this.sheets.push({ sheetName: `Sheet${this.sheets.length + 1}`, columns: [], collapsed: false });
     this.updateJson();
   }
   
-  removeColumn(index: number) {
-    this.columns.splice(index, 1);
+  toggleSheet(sheetIndex: number) {
+    this.sheets[sheetIndex].collapsed = !this.sheets[sheetIndex].collapsed;
+  }
+  
+  removeSheet(sheetIndex: number) {
+    this.sheets.splice(sheetIndex, 1);
+    this.updateJson();
+  }
+
+  addColumn(sheetIndex: number) {
+    this.sheets[sheetIndex].columns.push({ header: '', field: '' });
     this.updateJson();
   }
   
-  drop(event: CdkDragDrop<any[]>) {
+  removeColumn(sheetIndex: number, colIndex: number) {
+    this.sheets[sheetIndex].columns.splice(colIndex, 1);
+    this.updateJson();
+  }
+  
+  drop(event: CdkDragDrop<any[]>, sheetIndex?: number) {
     if (this.createdTemplate?.templateType === 'PDF') {
       moveItemInArray(this.pdfConfig.blocks, event.previousIndex, event.currentIndex);
       this.updatePdfJson();
-    } else {
-      moveItemInArray(this.columns, event.previousIndex, event.currentIndex);
+    } else if (sheetIndex !== undefined) {
+      moveItemInArray(this.sheets[sheetIndex].columns, event.previousIndex, event.currentIndex);
       this.updateJson();
     }
   }
   
   updateJson() {
     if (this.createdTemplate?.templateType !== 'PDF') {
-      this.draftJson = JSON.stringify({ columns: this.columns }, null, 2);
+      const pureSheets = this.sheets.map(s => ({ sheetName: s.sheetName, columns: s.columns }));
+      this.draftJson = JSON.stringify({ sheets: pureSheets }, null, 2);
     }
   }
 
@@ -227,8 +258,20 @@ export class TemplateEditorComponent implements OnInit {
         this.parsePdfJson();
       } else {
         const parsed = JSON.parse(this.draftJson || '{}');
-        if (parsed.columns && Array.isArray(parsed.columns)) {
-          this.columns = parsed.columns;
+        if (parsed.sheets && Array.isArray(parsed.sheets)) {
+          this.sheets = parsed.sheets.map((s: any) => ({ ...s, collapsed: false }));
+        } else if (parsed.columns && Array.isArray(parsed.columns)) {
+          const sheetMap = new Map<string, any[]>();
+          parsed.columns.forEach((col: any) => {
+            const sName = col.sheetName || 'Sheet1';
+            if (!sheetMap.has(sName)) sheetMap.set(sName, []);
+            sheetMap.get(sName)!.push(col);
+          });
+          this.sheets = Array.from(sheetMap.entries()).map(([name, cols]) => ({
+            sheetName: name,
+            columns: cols,
+            collapsed: false
+          }));
         }
       }
       this.showEditorDialog = false;
@@ -326,5 +369,9 @@ export class TemplateEditorComponent implements OnInit {
   downloadExcel() {
     if (!this.createdTemplate) return;
     this.templateService.downloadTemplate(this.createdTemplate.id);
+  }
+
+  goBack() {
+    this.router.navigate(['/templates']);
   }
 }
